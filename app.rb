@@ -35,7 +35,7 @@ class RepositorySync < Sinatra::Base
       return halt 500, "Tokens didn't match!" if invalid_token?(params[:token]) && settings.environment != "development"
 
       payload = JSON.parse params[:payload]
-      return halt 500, "WEBHOOK: Payload was not for master, aborting." unless master_branch?(payload)
+      return halt 406, "Payload was not for master, aborting." unless master_branch?(payload)
     end
 
     def invalid_token?(token)
