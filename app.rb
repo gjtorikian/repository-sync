@@ -19,10 +19,7 @@ class RepositorySync < Sinatra::Base
     if params[:token] == ENV["token"]
       payload = params[:payload]
 
-      unless master_branch?(payload)
-        Rails.logger.info "WEBHOOK: Payload was not for master, aborting."
-        return
-      end
+      return halt 500, "WEBHOOK: Payload was not for master, aborting." unless master_branch?(payload)
 
       "Hey, you did it!"
     else
@@ -34,10 +31,7 @@ class RepositorySync < Sinatra::Base
     if params[:token] == ENV["token"]
       payload = params[:payload]
 
-      unless master_branch?(payload)
-        Rails.logger.info "WEBHOOK: Payload was not for master, aborting."
-        return
-      end
+      return halt 500, "WEBHOOK: Payload was not for master, aborting." unless master_branch?(payload)
 
       "Hey, you did it, privately!"
     else
