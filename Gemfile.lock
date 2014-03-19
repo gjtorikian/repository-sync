@@ -11,6 +11,7 @@ GEM
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
+    rake (0.9.6)
     shotgun (0.9)
       rack (>= 1.0)
     sinatra (1.4.2)
@@ -34,6 +35,7 @@ PLATFORMS
 
 DEPENDENCIES
   json (~> 1.7.7)
+  rake
   shotgun (= 0.9)
   sinatra (= 1.4.2)
   sinatra-assetpack (= 0.2.2)
