@@ -16,3 +16,10 @@ tmp
 .yardoc
 _yardoc
 doc/
+
+.DS_Store
+/.rbenv-version
+/.ruby-version
+/vendor/gems/
+/bin/
+/.bundle/
