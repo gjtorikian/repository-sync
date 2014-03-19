@@ -1,4 +1,5 @@
 require 'sinatra/base'
+require 'json'
 
 class RepositorySync < Sinatra::Base
   set :root, File.dirname(__FILE__)
@@ -16,33 +17,32 @@ class RepositorySync < Sinatra::Base
   end
 
   post "/update_public" do
-    if params[:token] == ENV["token"]
-      payload = params[:payload]
+    check_params params
 
-      return halt 500, "WEBHOOK: Payload was not for master, aborting." unless master_branch?(payload)
-
-      "Hey, you did it!"
-    else
-      "Tokens didn't match!"
-    end
+    "Hey, you did it!"
   end
 
   post "/update_private" do
-    if params[:token] == ENV["token"]
-      payload = params[:payload]
+    check_params params
 
-      return halt 500, "WEBHOOK: Payload was not for master, aborting." unless master_branch?(payload)
+    "Hey, you did it, privately!"
 
-      "Hey, you did it, privately!"
-    else
-      "Tokens didn't match!"
-    end
   end
 
   helpers do
 
+    def check_params(params)
+      return halt 500, "Tokens didn't match!" if invalid_token?(params[:token]) && settings.environment != "development"
+
+      payload = JSON.parse params[:payload]
+      return halt 500, "WEBHOOK: Payload was not for master, aborting." unless master_branch?(payload)
+    end
+
+    def invalid_token?(token)
+      params[:token] == ENV["token"]
+    end
+
     def master_branch?(payload)
-      puts payload
       payload["ref"] == "refs/heads/master"
     end
 
