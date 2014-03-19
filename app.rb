@@ -47,7 +47,7 @@ class RepositorySync < Sinatra::Base
 
   helpers do
 
-    master_branch?(payload)
+    def master_branch?(payload)
       payload["ref"] == "refs/heads/master"
     end
 
