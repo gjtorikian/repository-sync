@@ -17,13 +17,23 @@ class RepositorySync < Sinatra::Base
   end
 
   post "/update_public" do
-    check_params params
+    payload = JSON.parse params[:payload]
+    public_repo = params[:public_repo]
+
+    check_params params, payload
+
+    clone_repo(public_repo)
 
     "Hey, you did it!"
   end
 
   post "/update_private" do
-    check_params params
+    payload = JSON.parse params[:payload]
+    private_repo = params[:private_repo]
+
+    check_params params, payload, true
+
+    clone_repo(private_repo)
 
     "Hey, you did it, privately!"
 
@@ -31,10 +41,14 @@ class RepositorySync < Sinatra::Base
 
   helpers do
 
-    def check_params(params)
+    def check_params(params, payload, is_private)
       return halt 500, "Tokens didn't match!" if invalid_token?(params[:token]) && settings.environment != "development"
+      if is_private
+        return halt 500, "Missing `private_repo` argument" if params[:private_repo].nil?
+      else
+        return halt 500, "Missing `public_repo` argument" if params[:public_repo].nil?
+      end
 
-      payload = JSON.parse params[:payload]
       return halt 406, "Payload was not for master, aborting." unless master_branch?(payload)
     end
 
@@ -46,5 +60,8 @@ class RepositorySync < Sinatra::Base
       payload["ref"] == "refs/heads/master"
     end
 
+    def clone_repo(repo)
+      IO.popen(["git", "clone", "https://www.github.com/#{repo}"])
+    end
   end
 end
