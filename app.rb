@@ -76,9 +76,9 @@ class RepositorySync < Sinatra::Base
       FileUtils.mkdir_p "#{TEMP_REPO_PREFIX}/#{repo}"
       Dir.chdir "#{TEMP_REPO_PREFIX}/#{repo}" do
         IO.popen(["git", "init"])
-        clone_command = IO.popen(["git", "pull", "https://github.com/#{repo}.git"])
+        clone_command = IO.popen(["git", "pull", clone_url_with_token(repo)])
         print_blocking_output(clone_command)
-        IO.popen(["git", "remote", "add", "origin", "https://github.com/#{repo}.git"])
+        IO.popen(["git", "remote", "add", "origin", clone_url_with_token(repo)])
       end
     end
 
@@ -86,7 +86,7 @@ class RepositorySync < Sinatra::Base
       Dir.chdir "#{TEMP_REPO_PREFIX}/#{repo}" do
         remotename = "otherrepo-#{Time.now.to_i}"
         branchname = "update-#{Time.now.to_i}"
-        remote_add = IO.popen(["git", "remote", "add", remotename, "https://github.com/#{@originating_repo}.git"])
+        remote_add = IO.popen(["git", "remote", "add", remotename, clone_url_with_token(@originating_repo)])
         fetch_command = IO.popen(["git", "fetch", remotename])
         print_blocking_output(fetch_command)
         IO.popen(["git", "checkout", "-b", branchname])
@@ -102,6 +102,10 @@ class RepositorySync < Sinatra::Base
       while (line = command.gets) # intentionally blocking call
         print line
       end
+    end
+
+    def clone_url_with_token(repo)
+      "https://#{@token}:x-oauth-basic@github.com/#{repo}.git"
     end
   end
 end
