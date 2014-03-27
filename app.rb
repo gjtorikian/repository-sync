@@ -102,12 +102,13 @@ class RepositorySync < Sinatra::Base
 
       # lol can't merge --squash with the git lib.
       puts "Merging #{@originating_repo}/master..."
-      FileUtils.rm ".git/index.lock" if File.exist? ".git/index.lock"
       if is_public
         merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
+        sleep 2
         @git_dir.commit('Squashing and merging an update')
       else
         merge_command = IO.popen(["git", "merge", "#{remotename}/master"])
+        sleep 2
       end
 
       print_blocking_output(merge_command)
