@@ -62,6 +62,7 @@ class RepositorySync < Sinatra::Base
 
     def do_the_work(is_public)
       in_tmpdir do |tmpdir|
+        setup_git
         clone_repo(tmpdir)
         branchname = update_repo(tmpdir, is_public)
         client = Octokit::Client.new(:access_token => @token)
@@ -76,6 +77,11 @@ class RepositorySync < Sinatra::Base
       yield path
     ensure
       FileUtils.rm_rf( path ) if File.exists?( path ) && !Sinatra::Base.development?
+    end
+
+    def setup_git
+      `git config user.name "Hubot"`
+      `git config user.email "hubot@github.com"`
     end
 
     def clone_repo(tmpdir)
