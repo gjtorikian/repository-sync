@@ -62,8 +62,8 @@ class RepositorySync < Sinatra::Base
 
     def do_the_work(is_public)
       in_tmpdir do |tmpdir|
-        setup_git
         clone_repo(tmpdir)
+        setup_git
         branchname = update_repo(tmpdir, is_public)
         client = Octokit::Client.new(:access_token => @token)
         client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
