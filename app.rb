@@ -27,15 +27,19 @@ class RepositorySync < Sinatra::Base
   post "/update_public" do
     check_params params
 
-    in_tmpdir do |tmpdir|
-      clone_repo(tmpdir)
-      branchname = update_repo(tmpdir)
-      client = Octokit::Client.new(:access_token => @token)
-      client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
-    end
+    do_the_work(true)
 
     "Hey, you did it!"
   end
+
+  post "/update_private" do
+    check_params params
+
+    do_the_work(false)
+
+    "Hey, you did it, privately!"
+  end
+
 
   helpers do
 
@@ -55,6 +59,15 @@ class RepositorySync < Sinatra::Base
       payload["ref"] == "refs/heads/master"
     end
 
+    def do_the_work(is_public)
+      in_tmpdir do |tmpdir|
+        clone_repo(tmpdir)
+        branchname = update_repo(tmpdir, is_public)
+        client = Octokit::Client.new(:access_token => @token)
+        client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
+      end
+    end
+
     def in_tmpdir
       path = File.expand_path "#{Dir.tmpdir}/repository-sync/repos/#{Time.now.to_i}#{rand(1000)}/"
       FileUtils.mkdir_p path
@@ -71,7 +84,7 @@ class RepositorySync < Sinatra::Base
       end
     end
 
-    def update_repo(tmpdir)
+    def update_repo(tmpdir, is_public)
       Dir.chdir "#{tmpdir}" do
         remotename = "otherrepo-#{Time.now.to_i}"
         branchname = "update-#{Time.now.to_i}"
@@ -83,10 +96,14 @@ class RepositorySync < Sinatra::Base
 
         # lol can't merge --squash with the git lib.
         puts "Merging #{remotename}/master..."
-        merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
-        print_blocking_output(merge_command)
+        if is_public
+          merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
+          @git_dir.commit('Squashing and merging an update')
+        else
+          merge_command = IO.popen(["git", "merge", "#{remotename}/master"])
+        end
 
-        @git_dir.commit('Squashing and merging an update')
+        print_blocking_output(merge_command)
 
         # not sure why push isn't working here
         puts "Pushing to origin..."
