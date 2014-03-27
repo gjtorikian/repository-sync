@@ -62,8 +62,8 @@ class RepositorySync < Sinatra::Base
 
     def do_the_work(is_public)
       in_tmpdir do |tmpdir|
-        Dir.chdir "#{tmpdir}" do
-          clone_repo
+        clone_repo(tmpdir)
+        Dir.chdir "#{tmpdir}/#{@destination_repo}" do
           setup_git
           branchname = update_repo(is_public)
           client = Octokit::Client.new(:access_token => @token)
@@ -81,9 +81,9 @@ class RepositorySync < Sinatra::Base
       FileUtils.rm_rf( path ) if File.exists?( path ) && !Sinatra::Base.development?
     end
 
-    def clone_repo
+    def clone_repo(tmpdir)
       puts "Cloning #{@destination_repo}..."
-      @git_dir = Git.clone(clone_url_with_token(@destination_repo), @destination_repo)
+      @git_dir = Git.clone(clone_url_with_token(@destination_repo), "#{tmpdir}/#{@destination_repo}")
     end
 
     def setup_git
