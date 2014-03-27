@@ -62,9 +62,11 @@ class RepositorySync < Sinatra::Base
 
     def do_the_work(is_public)
       in_tmpdir do |tmpdir|
-        clone_repo(tmpdir)
-        setup_git
-        branchname = update_repo(tmpdir, is_public)
+        Dir.chdir "#{tmpdir}" do
+          clone_repo
+          setup_git
+          branchname = update_repo(is_public)
+        end
         client = Octokit::Client.new(:access_token => @token)
         client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
       end
@@ -84,40 +86,36 @@ class RepositorySync < Sinatra::Base
       `git config user.email "hubot@github.com"`
     end
 
-    def clone_repo(tmpdir)
-      Dir.chdir "#{tmpdir}" do
-        puts "Cloning #{@destination_repo}..."
-        @git_dir = Git.clone(clone_url_with_token(@destination_repo), @destination_repo)
-      end
+    def clone_repo
+      puts "Cloning #{@destination_repo}..."
+      @git_dir = Git.clone(clone_url_with_token(@destination_repo), @destination_repo)
     end
 
-    def update_repo(tmpdir, is_public)
-      Dir.chdir "#{tmpdir}" do
-        remotename = "otherrepo-#{Time.now.to_i}"
-        branchname = "update-#{Time.now.to_i}"
+    def update_repo(is_public)
+      remotename = "otherrepo-#{Time.now.to_i}"
+      branchname = "update-#{Time.now.to_i}"
 
-        @git_dir.add_remote(remotename, clone_url_with_token(@originating_repo))
-        puts "Fetching #{@originating_repo}..."
-        @git_dir.remote(remotename).fetch
-        @git_dir.branch(branchname).checkout
+      @git_dir.add_remote(remotename, clone_url_with_token(@originating_repo))
+      puts "Fetching #{@originating_repo}..."
+      @git_dir.remote(remotename).fetch
+      @git_dir.branch(branchname).checkout
 
-        # lol can't merge --squash with the git lib.
-        puts "Merging #{remotename}/master..."
-        if is_public
-          merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
-          @git_dir.commit('Squashing and merging an update')
-        else
-          merge_command = IO.popen(["git", "merge", "#{remotename}/master"])
-        end
-
-        print_blocking_output(merge_command)
-
-        # not sure why push isn't working here
-        puts "Pushing to origin..."
-        merge_command = IO.popen(["git", "push", "origin", branchname])
-        print_blocking_output(merge_command)
-        branchname
+      # lol can't merge --squash with the git lib.
+      puts "Merging #{remotename}/master..."
+      if is_public
+        merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
+        @git_dir.commit('Squashing and merging an update')
+      else
+        merge_command = IO.popen(["git", "merge", "#{remotename}/master"])
       end
+
+      print_blocking_output(merge_command)
+
+      # not sure why push isn't working here
+      puts "Pushing to origin..."
+      merge_command = IO.popen(["git", "push", "origin", branchname])
+      print_blocking_output(merge_command)
+      branchname
     end
 
     def print_blocking_output(command)
