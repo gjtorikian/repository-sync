@@ -2,6 +2,7 @@ require 'sinatra/base'
 require 'json'
 require 'fileutils'
 require 'git'
+require 'octokit'
 
 class RepositorySync < Sinatra::Base
   set :root, File.dirname(__FILE__)
@@ -28,7 +29,9 @@ class RepositorySync < Sinatra::Base
 
     in_tmpdir do |tmpdir|
       clone_repo(tmpdir)
-      update_repo(tmpdir)
+      branchname = update_repo(tmpdir)
+      client = Octokit::Client.new(:access_token => @token)
+      client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
     end
 
     "Hey, you did it!"
@@ -89,6 +92,7 @@ class RepositorySync < Sinatra::Base
         puts "Pushing to origin..."
         merge_command = IO.popen(["git", "push", "origin", branchname])
         print_blocking_output(merge_command)
+        branchname
       end
     end
 
