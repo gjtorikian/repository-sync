@@ -66,9 +66,9 @@ class RepositorySync < Sinatra::Base
           clone_repo
           setup_git
           branchname = update_repo(is_public)
+          client = Octokit::Client.new(:access_token => @token)
+          client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
         end
-        client = Octokit::Client.new(:access_token => @token)
-        client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
       end
     end
 
@@ -81,14 +81,14 @@ class RepositorySync < Sinatra::Base
       FileUtils.rm_rf( path ) if File.exists?( path ) && !Sinatra::Base.development?
     end
 
-    def setup_git
-      `git config user.name "Hubot"`
-      `git config user.email "hubot@github.com"`
-    end
-
     def clone_repo
       puts "Cloning #{@destination_repo}..."
       @git_dir = Git.clone(clone_url_with_token(@destination_repo), @destination_repo)
+    end
+
+    def setup_git
+     @git_dir.config('user.name', 'Hubot')
+     @git_dir.config('user.email', 'hubot@github.com')
     end
 
     def update_repo(is_public)
