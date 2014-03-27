@@ -1,6 +1,7 @@
 require 'sinatra/base'
 require 'json'
 require 'fileutils'
+require 'git'
 
 class RepositorySync < Sinatra::Base
   set :root, File.dirname(__FILE__)
@@ -15,52 +16,35 @@ class RepositorySync < Sinatra::Base
     @token = params[:token]
     @payload = JSON.parse params[:payload]
     @originating_repo = "#{@payload["repository"]["owner"]["name"]}/#{@payload["repository"]["name"]}"
+    @destination_repo = params[:dest_repo]
   end
-
-  TEMP_REPO_PREFIX = "/tmp/repository-sync/repos"
 
   get "/" do
     "I think you misunderstand how to use this."
   end
 
   post "/update_public" do
-    public_repo = params[:public_repo]
-
     check_params params
 
-    wipe_repos_dir
-    clone_repo(public_repo)
-    update_repo(public_repo)
+    in_tmpdir do |tmpdir|
+      clone_repo(tmpdir)
+      update_repo(tmpdir)
+    end
 
     "Hey, you did it!"
   end
 
-  post "/update_private" do
-    private_repo = params[:private_repo]
-
-    check_params params, true
-
-    wipe_repos_dir
-    clone_repo(private_repo)
-
-    "Hey, you did it, privately!"
-
-  end
-
   helpers do
 
-    def check_params(params, is_private=false)
-      return halt 500, "Tokens didn't match!" unless invalid_token?(params[:token])
-      if is_private
-        return halt 500, "Missing `private_repo` argument" if params[:private_repo].nil?
-      else
-        return halt 500, "Missing `public_repo` argument" if params[:public_repo].nil?
-      end
+    def check_params(params)
+      return halt 500, "Tokens didn't match!" unless valid_token?(params[:token])
+      return halt 500, "Missing `dest_repo` argument" if params[:dest_repo].nil?
 
       return halt 406, "Payload was not for master, aborting." unless master_branch?(@payload)
     end
 
-    def invalid_token?(token)
+    def valid_token?(token)
+      return true if Sinatra::Base.development?
       params[:token] == ENV["REPOSITORY_SYNC_TOKEN"]
     end
 
@@ -68,33 +52,43 @@ class RepositorySync < Sinatra::Base
       payload["ref"] == "refs/heads/master"
     end
 
-    def wipe_repos_dir
-      system "rm -rf #{TEMP_REPO_PREFIX}"
+    def in_tmpdir
+      path = File.expand_path "#{Dir.tmpdir}/repository-sync/repos/#{Time.now.to_i}#{rand(1000)}/"
+      FileUtils.mkdir_p path
+      puts "Directory created at: #{path}"
+      yield path
+    ensure
+      FileUtils.rm_rf( path ) if File.exists?( path ) && !Sinatra::Base.development?
     end
 
-    def clone_repo(repo)
-      FileUtils.mkdir_p "#{TEMP_REPO_PREFIX}/#{repo}"
-      Dir.chdir "#{TEMP_REPO_PREFIX}/#{repo}" do
-        IO.popen(["git", "init"])
-        clone_command = IO.popen(["git", "pull", clone_url_with_token(repo)])
-        print_blocking_output(clone_command)
-        IO.popen(["git", "remote", "add", "origin", clone_url_with_token(repo)])
+    def clone_repo(tmpdir)
+      Dir.chdir "#{tmpdir}" do
+        puts "Cloning #{@destination_repo}..."
+        @git_dir = Git.clone(clone_url_with_token(@destination_repo), @destination_repo)
       end
     end
 
-    def update_repo(repo)
-      Dir.chdir "#{TEMP_REPO_PREFIX}/#{repo}" do
+    def update_repo(tmpdir)
+      Dir.chdir "#{tmpdir}" do
         remotename = "otherrepo-#{Time.now.to_i}"
         branchname = "update-#{Time.now.to_i}"
-        remote_add = IO.popen(["git", "remote", "add", remotename, clone_url_with_token(@originating_repo)])
-        fetch_command = IO.popen(["git", "fetch", remotename])
-        print_blocking_output(fetch_command)
-        IO.popen(["git", "checkout", "-b", branchname])
+
+        @git_dir.add_remote(remotename, clone_url_with_token(@originating_repo))
+        puts "Fetching #{@originating_repo}..."
+        @git_dir.remote(remotename).fetch
+        @git_dir.branch(branchname).checkout
+
+        # lol can't merge --squash with the git lib.
+        puts "Merging #{remotename}/master..."
         merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
         print_blocking_output(merge_command)
-        merge_command = IO.popen(["git", "commit", "-m", '"Squashing and merging an update"'])
-        push_command = IO.popen(["git", "push", "origin", branchname])
-        print_blocking_output(push_command)
+
+        @git_dir.commit('Squashing and merging an update')
+
+        # not sure why push isn't working here
+        puts "Pushing to origin..."
+        merge_command = IO.popen(["git", "push", "origin", branchname])
+        print_blocking_output(merge_command)
       end
     end
 

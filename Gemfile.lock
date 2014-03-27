@@ -4,6 +4,7 @@ GEM
     backports (3.6.0)
     daemons (1.1.9)
     eventmachine (1.0.3)
+    git (1.2.6)
     jsmin (1.0.1)
     json (1.7.7)
     rack (1.5.2)
@@ -34,6 +35,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  git (~> 1.2.6)
   json (~> 1.7.7)
   rake
   shotgun (= 0.9)
