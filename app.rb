@@ -19,6 +19,7 @@ class RepositorySync < Sinatra::Base
     @payload = JSON.parse params[:payload]
     @originating_repo = "#{@payload["repository"]["owner"]["name"]}/#{@payload["repository"]["name"]}"
     @destination_repo = params[:dest_repo]
+    check_params params
   end
 
   get "/" do
@@ -26,16 +27,12 @@ class RepositorySync < Sinatra::Base
   end
 
   post "/update_public" do
-    check_params params
-
     do_the_work(true)
 
     "Hey, you did it!"
   end
 
   post "/update_private" do
-    check_params params
-
     do_the_work(false)
 
     "Hey, you did it, privately!"
@@ -45,10 +42,9 @@ class RepositorySync < Sinatra::Base
   helpers do
 
     def check_params(params)
-      return halt 500, "Tokens didn't match!" unless valid_token?(params[:token])
-      return halt 500, "Missing `dest_repo` argument" if params[:dest_repo].nil?
-
-      return halt 406, "Payload was not for master, aborting." unless master_branch?(@payload)
+      return halt 500, "Tokens didn't match!" unless valid_token?(@token)
+      return halt 500, "Missing `dest_repo` argument" if @destination_repo.nil?
+      return halt 202, "Payload was not for master, aborting." unless master_branch?(@payload)
     end
 
     def valid_token?(token)
@@ -67,7 +63,9 @@ class RepositorySync < Sinatra::Base
           setup_git
           branchname = update_repo(is_public)
           client = Octokit::Client.new(:access_token => @token)
-          client.create_pull_request(@destination_repo, "master", branchname, "Automatically PRing changes", ":zap::zap::zap:")
+          new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Opening a Pull Request for alternate updates", ":zap::zap::zap:")
+          client.merge_pull_request(@destination_repo, new_pr[:number])
+          client.delete_ref(@destination_repo, branchname)
         end
       end
     end
@@ -100,7 +98,7 @@ class RepositorySync < Sinatra::Base
       @git_dir.remote(remotename).fetch
       @git_dir.branch(branchname).checkout
 
-      # lol can't merge --squash with the git lib.
+      # lol can't `merge --squash` with the git lib.
       puts "Merging #{@originating_repo}/master..."
       if is_public
         merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
