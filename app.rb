@@ -65,6 +65,7 @@ class RepositorySync < Sinatra::Base
           client = Octokit::Client.new(:access_token => @token)
           new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Opening a Pull Request for alternate updates", ":zap::zap::zap:")
           client.merge_pull_request(@destination_repo, new_pr[:number])
+          client.delete_ref(@destination_repo, branchname)
         end
       end
     end
