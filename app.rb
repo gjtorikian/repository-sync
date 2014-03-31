@@ -14,6 +14,7 @@ class RepositorySync < Sinatra::Base
     # trim trailing slashes
     request.path_info.sub! %r{/$}, ''
     pass unless %w[update_public update_private].include? request.path_info.split('/')[1]
+    check_params params
     # keep some important vars
     @token = params[:token]
     @payload = JSON.parse params[:payload]
@@ -26,16 +27,12 @@ class RepositorySync < Sinatra::Base
   end
 
   post "/update_public" do
-    check_params params
-
     do_the_work(true)
 
     "Hey, you did it!"
   end
 
   post "/update_private" do
-    check_params params
-
     do_the_work(false)
 
     "Hey, you did it, privately!"
@@ -47,7 +44,6 @@ class RepositorySync < Sinatra::Base
     def check_params(params)
       return halt 500, "Tokens didn't match!" unless valid_token?(params[:token])
       return halt 500, "Missing `dest_repo` argument" if params[:dest_repo].nil?
-
       return halt 406, "Payload was not for master, aborting." unless master_branch?(@payload)
     end
 
@@ -100,7 +96,7 @@ class RepositorySync < Sinatra::Base
       @git_dir.remote(remotename).fetch
       @git_dir.branch(branchname).checkout
 
-      # lol can't merge --squash with the git lib.
+      # lol can't `merge --squash` with the git lib.
       puts "Merging #{@originating_repo}/master..."
       if is_public
         merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
