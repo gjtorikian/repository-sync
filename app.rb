@@ -63,7 +63,7 @@ class RepositorySync < Sinatra::Base
           setup_git
           branchname = update_repo(is_public)
           client = Octokit::Client.new(:access_token => @token)
-          new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Opening a Pull Request for alternate updates", ":zap::zap::zap:")
+          new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
           client.merge_pull_request(@destination_repo, new_pr[:number])
           client.delete_ref(@destination_repo, branchname)
         end
@@ -103,7 +103,7 @@ class RepositorySync < Sinatra::Base
       if is_public
         merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
         sleep 2
-        @git_dir.commit('Squashing and merging an update')
+        @git_dir.commit('Sync changes from upstream repository')
       else
         merge_command = IO.popen(["git", "merge", "#{remotename}/master"])
         sleep 2
