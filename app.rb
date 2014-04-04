@@ -64,8 +64,12 @@ class RepositorySync < Sinatra::Base
           branchname = update_repo(is_public)
           client = Octokit::Client.new(:access_token => @token)
           new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
-          client.merge_pull_request(@destination_repo, new_pr[:number])
-          client.delete_ref(@destination_repo, branchname)
+          begin
+            client.merge_pull_request(@destination_repo, new_pr[:number])
+            client.delete_ref(@destination_repo, branchname)
+          rescue Octokit::ClientError
+            puts "Sorry, the CI is probably halting this auto-merge: #{e.message}"
+          end
         end
       end
     end
