@@ -105,15 +105,23 @@ class RepositorySync < Sinatra::Base
       @git_dir.remote(remotename).fetch
       @git_dir.branch(branchname).checkout
 
-      # lol can't `merge --squash` with the git lib.
-      puts "Merging #{@originating_repo}/master..."
-      if is_public
-        merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
-        sleep 2
-        @git_dir.commit('Sync changes from upstream repository')
-      else
-        merge_command = IO.popen(["git", "merge", "#{remotename}/master"])
-        sleep 2
+      begin
+        # lol can't `merge --squash` with the git lib.
+        puts "Merging #{@originating_repo}/master..."
+        if is_public
+          merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
+          sleep 2
+          @git_dir.commit('Sync changes from upstream repository')
+        else
+          merge_command = IO.popen(["git", "merge", "#{remotename}/master"])
+          sleep 2
+        end
+      rescue Git::GitExecuteError => e
+        if e.message =~ /nothing to commit \(working directory clean\)/
+          puts "nothing to commit (working directory clean)"
+        else
+          puts e.message
+        end
       end
 
       print_blocking_output(merge_command)
