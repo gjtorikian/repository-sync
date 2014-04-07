@@ -65,6 +65,7 @@ class RepositorySync < Sinatra::Base
         Dir.chdir "#{tmpdir}/#{@destination_repo}" do
           setup_git
           branchname = update_repo(is_public)
+          return if branchname.nil?
           client = Octokit::Client.new(:access_token => token)
           new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
           begin
@@ -122,6 +123,7 @@ class RepositorySync < Sinatra::Base
         else
           puts e.message
         end
+        return nil
       end
 
       print_blocking_output(merge_command)
