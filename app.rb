@@ -15,7 +15,6 @@ class RepositorySync < Sinatra::Base
     request.path_info.sub! %r{/$}, ''
     pass unless %w[update_public update_private].include? request.path_info.split('/')[1]
     # keep some important vars
-    @token = params[:token]
     @payload = JSON.parse params[:payload]
     @originating_repo = "#{@payload["repository"]["owner"]["name"]}/#{@payload["repository"]["name"]}"
     @destination_repo = params[:dest_repo]
@@ -42,7 +41,7 @@ class RepositorySync < Sinatra::Base
   helpers do
 
     def check_params(params)
-      return halt 500, "Tokens didn't match!" unless valid_token?(@token)
+      return halt 500, "Tokens didn't match!" unless valid_token?(params[:token])
       return halt 500, "Missing `dest_repo` argument" if @destination_repo.nil?
       return halt 202, "Payload was not for master, aborting." unless master_branch?(@payload)
     end
@@ -50,6 +49,10 @@ class RepositorySync < Sinatra::Base
     def valid_token?(token)
       return true if Sinatra::Base.development?
       params[:token] == ENV["REPOSITORY_SYNC_TOKEN"]
+    end
+
+    def token
+      ENV["HUBOT_GITHUB_TOKEN"]
     end
 
     def master_branch?(payload)
@@ -62,7 +65,7 @@ class RepositorySync < Sinatra::Base
         Dir.chdir "#{tmpdir}/#{@destination_repo}" do
           setup_git
           branchname = update_repo(is_public)
-          client = Octokit::Client.new(:access_token => @token)
+          client = Octokit::Client.new(:access_token => token)
           new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
           begin
             client.merge_pull_request(@destination_repo, new_pr[:number])
@@ -129,7 +132,7 @@ class RepositorySync < Sinatra::Base
     end
 
     def clone_url_with_token(repo)
-      "https://#{@token}:x-oauth-basic@github.com/#{repo}.git"
+      "https://#{token}:x-oauth-basic@github.com/#{repo}.git"
     end
   end
 end
