@@ -119,7 +119,7 @@ class RepositorySync < Sinatra::Base
         end
       rescue Git::GitExecuteError => e
         if e.message =~ /nothing to commit \(working directory clean\)/
-          puts "nothing to commit (working directory clean)"
+          puts "*** nothing to commit (working directory clean) ***"
         else
           puts e.message
         end
