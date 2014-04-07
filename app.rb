@@ -27,14 +27,10 @@ class RepositorySync < Sinatra::Base
 
   post "/update_public" do
     do_the_work(true)
-
-    "Hey, you did it!"
   end
 
   post "/update_private" do
     do_the_work(false)
-
-    "Hey, you did it, privately!"
   end
 
 
@@ -64,15 +60,17 @@ class RepositorySync < Sinatra::Base
         clone_repo(tmpdir)
         Dir.chdir "#{tmpdir}/#{@destination_repo}" do
           setup_git
-          branchname = update_repo(is_public)
-          return if branchname.nil?
+          branchname, message = update_repo(is_public)
+          return message if branchname.nil?
           client = Octokit::Client.new(:access_token => token)
           new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
           begin
             client.merge_pull_request(@destination_repo, new_pr[:number])
             client.delete_ref(@destination_repo, branchname)
-          rescue Octokit::ClientError
-            puts "Sorry, the CI is probably halting this auto-merge: #{e.message}"
+          rescue Octokit::ClientError => e
+            return "Sorry, the CI is probably halting this auto-merge: #{e.message}"
+          else
+            halt 500, e.message
           end
         end
       end
@@ -118,12 +116,11 @@ class RepositorySync < Sinatra::Base
           sleep 2
         end
       rescue Git::GitExecuteError => e
-        if e.message =~ /nothing to commit \(working directory clean\)/
-          puts "*** nothing to commit (working directory clean) ***"
+        if e.message =~ /nothing to commit/
+          return nil, "#{e.message}"
         else
-          puts e.message
+          halt 500, e.message
         end
-        return nil
       end
 
       print_blocking_output(merge_command)
