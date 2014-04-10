@@ -92,7 +92,7 @@ class RepositorySync < Sinatra::Base
 
     def setup_git
      @git_dir.config('user.name', 'Hubot')
-     @git_dir.config('user.email', 'hubot@github.com')
+     @git_dir.config('user.email', 'cwanstrath+hubot@gmail.com')
     end
 
     def update_repo(is_public)
