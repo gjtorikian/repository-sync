@@ -62,15 +62,16 @@ class RepositorySync < Sinatra::Base
           setup_git
           branchname, message = update_repo(is_public)
           return message if branchname.nil?
+          puts "Working on branch #{branchname}"
           client = Octokit::Client.new(:access_token => token)
           new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
           begin
             client.merge_pull_request(@destination_repo, new_pr[:number])
-            client.delete_ref(@destination_repo, branchname)
+            puts "Merged PR ##{new_pr[:number]}"
+            client.delete_branch(@destination_repo, branchname)
+            puts "Deleted branch #{branchname}"
           rescue Octokit::ClientError => e
             return "Sorry, the CI is probably halting this auto-merge: #{e.message}"
-          else
-            halt 500, e.message
           end
         end
       end
