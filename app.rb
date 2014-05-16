@@ -10,9 +10,6 @@ require './clone_job'
 class RepositorySync < Sinatra::Base
   set :root, File.dirname(__FILE__)
 
-  # "Thin is a supremely better performing web server so do please use it!"
-  set :server, %w[thin webrick]
-
   configure do
     if ENV['RACK_ENV'] == "production"
       uri = URI.parse( ENV[ "REDISTOGO_URL" ])
