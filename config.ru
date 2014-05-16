@@ -1,2 +1,6 @@
 require "./app"
-run RepositorySync
+require 'resque/server'
+
+run Rack::URLMap.new \
+  "/"       => RepositorySync,
+  "/resque" => Resque::Server.new
