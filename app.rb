@@ -14,7 +14,7 @@ class RepositorySync < Sinatra::Base
   set :server, %w[thin webrick]
 
   configure do
-    if self.class.production?
+    if ENV['RACK_ENV'] == "production"
       uri = URI.parse( ENV[ "REDISTOGO_URL" ])
       REDIS = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
       Resque.redis = REDIS
