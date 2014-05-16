@@ -24,3 +24,5 @@ doc/
 /bin/
 /.bundle/
 repos/
+
+*.rdb
