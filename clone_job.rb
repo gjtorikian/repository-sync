@@ -13,7 +13,7 @@ class CloneJob
       client = Octokit::Client.new(:access_token => token)
       new_pr = client.create_pull_request(destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
       puts "PR ##{new_pr[:number]} created"
-      sleep 2
+      sleep 2 # seems that the PR cannot be merged immediately after it's made?
       client.merge_pull_request(destination_repo, new_pr[:number].to_i)
       puts "Merged PR ##{new_pr[:number]}"
       client.delete_branch(destination_repo, branchname)
