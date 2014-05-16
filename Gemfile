@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 gem 'sinatra', '1.4.2'
 gem 'sinatra-assetpack', '0.2.2'
-gem 'thin', '1.5.1'
+gem 'unicorn', "~> 4.8"
 gem 'json', '~> 1.7.7'
 gem 'rake'
 gem 'git', '~> 1.2.6'
