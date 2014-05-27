@@ -14,8 +14,14 @@ class CloneJob
       new_pr = client.create_pull_request(destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
       puts "PR ##{new_pr[:number]} created"
       sleep 2 # seems that the PR cannot be merged immediately after it's made?
-      client.merge_pull_request(destination_repo, new_pr[:number].to_i)
-      puts "Merged PR ##{new_pr[:number]}"
+      # don't merge PRs with empty changesets
+      if client.pull_request(destination_repo, new_pr[:number])[:changed_files] == 0
+        client.close_pull_request(destination_repo, new_pr[:number])
+        puts "Closed PR ##{new_pr[:number]} (empty changeset)"
+      else
+        client.merge_pull_request(destination_repo, new_pr[:number].to_i)
+        puts "Merged PR ##{new_pr[:number]}"
+      end
       client.delete_branch(destination_repo, branchname)
       puts "Deleted branch #{branchname}"
     end
