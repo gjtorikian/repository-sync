@@ -62,7 +62,7 @@ class RepositorySync < Sinatra::Base
     end
 
     def token
-      ENV["HUBOT_GITHUB_TOKEN"]
+      ENV["MACHINE_USER_TOKEN"]
     end
 
     def master_branch?(payload)
