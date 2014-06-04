@@ -29,8 +29,7 @@ class RepositorySync < Sinatra::Base
     # ensure signature is correct
     request.body.rewind
     payload_body = request.body.read
-    signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new('sha1'), ENV['SECRET_TOKEN'], payload_body)
-    return halt 500, "Signatures didn't match!" unless signature == request.env['HTTP_X_HUB_SIGNATURE']
+    verify_signature(payload_body)
     # keep some important vars
     @payload = JSON.parse params[:payload]
     @originating_repo = "#{@payload["repository"]["owner"]["name"]}/#{@payload["repository"]["name"]}"
@@ -51,6 +50,11 @@ class RepositorySync < Sinatra::Base
   end
 
   helpers do
+
+    def verify_signature(payload_body)
+      signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new('sha1'), ENV['SECRET_TOKEN'], payload_body)
+      return halt 500, "Signatures didn't match!" unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE'])
+    end
 
     def check_params(params)
       return halt 500, "Missing `dest_repo` argument" if @destination_repo.nil?
