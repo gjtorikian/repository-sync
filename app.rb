@@ -4,6 +4,8 @@ require 'fileutils'
 require 'octokit'
 require 'resque'
 require 'redis'
+require 'openssl'
+require "base64"
 
 require './clone_job'
 
@@ -24,6 +26,11 @@ class RepositorySync < Sinatra::Base
     # trim trailing slashes
     request.path_info.sub! %r{/$}, ''
     pass unless %w[update_public update_private].include? request.path_info.split('/')[1]
+    # ensure signature is correct
+    request.body.rewind
+    payload_body = request.body.read
+    signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new('sha1'), ENV['SECRET_TOKEN'], payload_body)
+    return halt 500, "Signatures didn't match!" unless signature == request.env['HTTP_X_HUB_SIGNATURE']
     # keep some important vars
     @payload = JSON.parse params[:payload]
     @originating_repo = "#{@payload["repository"]["owner"]["name"]}/#{@payload["repository"]["name"]}"
@@ -46,14 +53,8 @@ class RepositorySync < Sinatra::Base
   helpers do
 
     def check_params(params)
-      return halt 500, "Tokens didn't match!" unless valid_token?(params[:token])
       return halt 500, "Missing `dest_repo` argument" if @destination_repo.nil?
       return halt 202, "Payload was not for master, aborting." unless master_branch?(@payload)
-    end
-
-    def valid_token?(token)
-      return true if Sinatra::Base.development?
-      params[:token] == ENV["REPOSITORY_SYNC_TOKEN"]
     end
 
     def token
