@@ -1,10 +1,10 @@
-require 'sinatra/base'
-require 'json'
-require 'fileutils'
-require 'octokit'
-require 'resque'
-require 'redis'
-require 'openssl'
+require "sinatra/base"
+require "json"
+require "fileutils"
+require "octokit"
+require "resque"
+require "redis"
+require "openssl"
 require "base64"
 
 require './clone_job'
