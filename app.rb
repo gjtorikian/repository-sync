@@ -31,7 +31,7 @@ class RepositorySync < Sinatra::Base
     payload_body = request.body.read
     verify_signature(payload_body)
     # keep some important vars
-    @payload = JSON.parse params[:payload]
+    @payload = JSON.parse payload_body
     @originating_repo = "#{@payload["repository"]["owner"]["name"]}/#{@payload["repository"]["name"]}"
     @destination_repo = params[:dest_repo]
     check_params params
