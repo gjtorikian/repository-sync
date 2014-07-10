@@ -3,4 +3,4 @@
 set -e
 export CC=gcc
 
-bundle exec shotgun
+foreman start

@@ -9,5 +9,7 @@ gem "octokit", "~> 2.0"
 gem "resque", "~> 1.25"
 
 group :development do
-  gem 'shotgun', '0.9'
+  gem 'shotgun'
+  gem 'foreman', '~> 0.71'
+  gem 'pry'
 end
