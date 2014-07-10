@@ -4,4 +4,4 @@ set -e
 export CC=gcc
 
 redis-server script/redis.conf
-foreman start
+rerun foreman start
