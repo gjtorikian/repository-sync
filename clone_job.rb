@@ -25,6 +25,13 @@ class CloneJob
       return message if branchname.nil?
       puts "Working on branch #{branchname}..."
       token = fetch_proper_token(@destination_hostname)
+      unless @destination_hostname == "github.com"
+        Octokit.configure do |c|
+          c.api_endpoint = "https://#{@destination_hostname}/api/v3/"
+          c.web_endpoint = "https://#{@destination_hostname}"
+        end
+      end
+      puts "Using #{Octokit.api_endpoint}..."
       client = Octokit::Client.new(:access_token => token)
       new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
       puts "PR ##{new_pr[:number]} created!"
