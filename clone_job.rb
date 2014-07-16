@@ -35,7 +35,7 @@ class CloneJob
       client = Octokit::Client.new(:access_token => token)
 
       # don't create PRs with empty changesets
-      if client.compare(@destination_repo, "master", branchname)[:files]
+      if client.compare(@destination_repo, "master", branchname)[:files].empty?
         puts "Not creating a PR, no files have changed!"
       else
         new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
