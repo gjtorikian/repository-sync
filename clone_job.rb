@@ -33,17 +33,18 @@ class CloneJob
       end
       puts "Using #{Octokit.api_endpoint}..."
       client = Octokit::Client.new(:access_token => token)
-      new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
-      puts "PR ##{new_pr[:number]} created!"
-      sleep 2 # seems that the PR cannot be merged immediately after it's made?
-      # don't merge PRs with empty changesets
-      if client.pull_request(@destination_repo, new_pr[:number])[:changed_files] == 0
-        client.close_pull_request(@destination_repo, new_pr[:number])
-        puts "Closed PR ##{new_pr[:number]} (empty changeset)"
+
+      # don't create PRs with empty changesets
+      if client.compare(@destination_repo, "master", branchname)[:files]
+        puts "Not creating a PR, no files have changed!"
       else
+        new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
+        puts "PR ##{new_pr[:number]} created!"
+        sleep 2 # seems that the PR cannot be merged immediately after it's made?
         client.merge_pull_request(@destination_repo, new_pr[:number].to_i)
         puts "Merged PR ##{new_pr[:number]}"
       end
+
       client.delete_branch(@destination_repo, branchname)
       puts "Deleted branch #{branchname}"
     end
@@ -61,7 +62,8 @@ class CloneJob
 
     begin
       # lol can't `merge --squash` with the git lib.
-      puts "Merging #{@originating_repo}/master..."
+      public_note = is_public ? "(is public)" : ""
+      puts "Merging #{@originating_repo}/master into #{remotename} #{public_note}..."
       if is_public
         merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
         sleep 2
