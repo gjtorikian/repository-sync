@@ -31,7 +31,7 @@ class CloneJob
           c.web_endpoint = "https://#{@destination_hostname}"
         end
       end
-      puts "Using #{Octokit.api_endpoint}..."
+      puts "Using API endpoint #{Octokit.api_endpoint}..."
       client = Octokit::Client.new(:access_token => token)
 
       # don't create PRs with empty changesets
