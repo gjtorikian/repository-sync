@@ -31,9 +31,11 @@ class RepositorySync < Sinatra::Base
     payload_body = request.body.read
     verify_signature(payload_body)
     # keep some important vars
-    @payload = JSON.parse params[:payload]
+    @payload = JSON.parse payload_body
     @originating_repo = "#{@payload["repository"]["owner"]["name"]}/#{@payload["repository"]["name"]}"
+    @originating_hostname = @payload["repository"]["url"].match(/\/\/(.+?)\//)[1]
     @destination_repo = params[:dest_repo]
+    @destination_hostname = params[:hostname] || "github.com"
     check_params params
   end
 
@@ -52,6 +54,7 @@ class RepositorySync < Sinatra::Base
   helpers do
 
     def verify_signature(payload_body)
+      return true if Sinatra::Base.development? or ENV['SECRET_TOKEN'].nil?
       signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha1"), ENV['SECRET_TOKEN'], payload_body)
       return halt 500, "Signatures didn't match!" unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE'])
     end
@@ -61,8 +64,12 @@ class RepositorySync < Sinatra::Base
       return halt 202, "Payload was not for master, aborting." unless master_branch?(@payload)
     end
 
-    def token
-      ENV["MACHINE_USER_TOKEN"]
+    def dotcom_token
+      ENV["DOTCOM_MACHINE_USER_TOKEN"]
+    end
+
+    def ghe_token
+      ENV["GHE_MACHINE_USER_TOKEN"]
     end
 
     def master_branch?(payload)
@@ -71,7 +78,7 @@ class RepositorySync < Sinatra::Base
 
     def do_the_work(is_public)
       in_tmpdir do |tmpdir|
-        Resque.enqueue(CloneJob, tmpdir, token, @destination_repo, @originating_repo, is_public)
+        Resque.enqueue(CloneJob, tmpdir, dotcom_token, ghe_token, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, is_public)
       end
     end
 

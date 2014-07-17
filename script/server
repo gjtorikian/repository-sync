@@ -3,4 +3,5 @@
 set -e
 export CC=gcc
 
-bundle exec shotgun
+redis-server script/redis.conf
+rerun foreman start
