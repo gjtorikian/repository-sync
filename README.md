@@ -8,13 +8,13 @@ Easily sync between two repositories, one private, one public.
 ### Between two GitHub.com repositories
 
 1. Deploy this code to Heroku (or some other server you own).
-2. Set an environment variable on that server called `SECRET_TOKEN`, which establishes a private token. This token is used to verify that the payload came from GitHub.
-3. Set another environment variable on that server called `DOTCOM_MACHINE_USER_TOKEN`. This is the access token the server will act as when performing the Git operations.
+2. Set an environment variable on that server called `SECRET_TOKEN`, which establishes a private token. This token is used to [verify that the payload came from GitHub](https://developer.github.com/webhooks/securing/).
+3. Set another environment variable on that server called `DOTCOM_MACHINE_USER_TOKEN`. This is [the access token the server will act as](https://help.github.com/articles/creating-an-access-token-for-command-line-use) when syncing between the repositories.
 
-On your private repository, set a webhook up to hit the `/update_public` endpoint.
+On your private repository, set a webhook to point to the `/update_public` endpoint.
 Pass in just one parameter, `dest_repo`, the name of the public repository to update.
 
-On your public repository, set a webhook up to hit the `/update_private` endpoint.
+On your public repository, set a webhook to point to the `/update_private` endpoint.
 Pass in just one parameter, `dest_repo`, the name of the private repository to update.
 
 You'll notice these two are practically the same. They are! The only difference is
@@ -24,14 +24,14 @@ the commit history.
 ### Between a GitHub.com repository and a GitHub Enterprise repository
 
 1. Deploy this code to Heroku (or some other server you own).
-2. Set an environment variable on that server called `SECRET_TOKEN`, which establishes a private token. This token is used to verify that the payload came from GitHub.
-3. Set another environment variable on that server called `DOTCOM_MACHINE_USER_TOKEN`. This is the access token the server will act as when performing the Git operations on GitHub.com.
-3. Set another environment variable on that server called `GHE_MACHINE_USER_TOKEN`. This is the access token the server will act as when performing the Git operations on GitHub Enterprise.
+2. Set an environment variable on that server called `SECRET_TOKEN`, which establishes a private token. This token is used to [verify that the payload came from GitHub](https://developer.github.com/webhooks/securing/).
+3. Set another environment variable on that server called `DOTCOM_MACHINE_USER_TOKEN`. This is [the access token the server will act as](https://help.github.com/articles/creating-an-access-token-for-command-line-use) when syncing between the repositories.
+3. Set another environment variable on that server called `GHE_MACHINE_USER_TOKEN`. This is [the access token the server will act as](https://help.github.com/articles/creating-an-access-token-for-command-line-use) when syncing between the repositories.
 
-On your private repository, set a webhook up to hit the `/update_public` endpoint.
+On your private repository, set a webhook to point to the `/update_public` endpoint.
 Pass in just one parameter, `dest_repo`, the name of the public repository to update.
 
-On your public repository, set a webhook up to hit the `/update_private` endpoint.
+On your public repository, set a webhook to point to the `/update_private` endpoint.
 Pass in two parameters:
 
 * `dest_repo`, the name of the private repository to update
