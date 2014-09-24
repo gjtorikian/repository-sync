@@ -106,7 +106,8 @@ class CloneJob
   def self.print_blocking_output(command)
     while (line = command.gets) # intentionally blocking call
       print line
-      if line.match(/Merge conflict/) || line.match(/error/i)
+      if line.match(/Merge conflict/) || line.match(/error/)
+        print "Opening issue..."
         @client.create_issue(@originating_repo, "Merge conflict detected", "Hey, I'm really sorry about this, but there was a merge conflict when I tried to auto-sync the last time. You'll have to resolve this problem manually, I'm afraid. \n\n![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)")
       end
     end
