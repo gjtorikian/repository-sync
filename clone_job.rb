@@ -21,7 +21,7 @@ class CloneJob
 
     Dir.chdir "#{@tmpdir}/#{@destination_repo}" do
       setup_git
-      branchname, message = update_repo(is_public)
+      branchname, message = update_repo
       return message if branchname.nil?
       puts "Working on branch #{branchname}..."
       token = fetch_proper_token(@destination_hostname)
@@ -32,25 +32,25 @@ class CloneJob
         end
       end
       puts "Using API endpoint #{Octokit.api_endpoint}..."
-      client = Octokit::Client.new(:access_token => token)
+      @client = Octokit::Client.new(:access_token => token)
 
       # don't create PRs with empty changesets
-      if client.compare(@destination_repo, "master", branchname)[:files].empty?
+      if @client.compare(@destination_repo, "master", branchname)[:files].empty?
         puts "Not creating a PR, no files have changed!"
       else
-        new_pr = client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
+        new_pr = @client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
         puts "PR ##{new_pr[:number]} created!"
         sleep 2 # seems that the PR cannot be merged immediately after it's made?
-        client.merge_pull_request(@destination_repo, new_pr[:number].to_i)
+        @client.merge_pull_request(@destination_repo, new_pr[:number].to_i)
         puts "Merged PR ##{new_pr[:number]}"
       end
 
-      client.delete_branch(@destination_repo, branchname)
+      @client.delete_branch(@destination_repo, branchname)
       puts "Deleted branch #{branchname}"
     end
   end
 
-  def self.update_repo(is_public)
+  def self.update_repo
     remotename = "otherrepo-#{Time.now.to_i}"
     branchname = "update-#{Time.now.to_i}"
 
@@ -62,9 +62,9 @@ class CloneJob
 
     begin
       # lol can't `merge --squash` with the git lib.
-      public_note = is_public ? "(is public)" : ""
+      public_note = @is_public ? "(is public)" : ""
       puts "Merging #{@originating_repo}/master into #{remotename} #{public_note}..."
-      if is_public
+      if @is_public
         merge_command = IO.popen(["git", "merge", "--squash", "#{remotename}/master"])
         sleep 2
         @git_dir.commit('Sync changes from upstream repository')
@@ -106,6 +106,10 @@ class CloneJob
   def self.print_blocking_output(command)
     while (line = command.gets) # intentionally blocking call
       print line
+      if line.match(/Merge conflict/) || line.match(/error/)
+        print "Opening issue..."
+        @client.create_issue(@originating_repo, "Merge conflict detected", "Hey, I'm really sorry about this, but there was a merge conflict when I tried to auto-sync the last time. You'll have to resolve this problem manually, I'm afraid. \n\n![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)")
+      end
     end
   end
 
