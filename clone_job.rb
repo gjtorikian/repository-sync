@@ -25,7 +25,7 @@ class CloneJob
       return message if branchname.nil?
       puts "Working on branch #{branchname}..."
       token = fetch_proper_token(@destination_hostname)
-      unless @destination_hostname == "github.com"
+      unless @destination_hostname == 'github.com'
         Octokit.configure do |c|
           c.api_endpoint = "https://#{@destination_hostname}/api/v3/"
           c.web_endpoint = "https://#{@destination_hostname}"
@@ -36,9 +36,9 @@ class CloneJob
 
       # don't create PRs with empty changesets
       if @client.compare(@destination_repo, "master", branchname)[:files].empty?
-        puts "Not creating a PR, no files have changed!"
+        puts 'Not creating a PR, no files have changed!'
       else
-        new_pr = @client.create_pull_request(@destination_repo, "master", branchname, "Sync changes from upstream repository", ":zap::zap::zap:")
+        new_pr = @client.create_pull_request(@destination_repo, 'master', branchname, 'Sync changes from upstream repository', ':zap::zap::zap:')
         puts "PR ##{new_pr[:number]} created!"
         sleep 2 # seems that the PR cannot be merged immediately after it's made?
         @client.merge_pull_request(@destination_repo, new_pr[:number].to_i)
@@ -83,8 +83,8 @@ class CloneJob
     print_blocking_output(merge_command)
 
     # not sure why push isn't working here
-    puts "Pushing to origin..."
-    merge_command = IO.popen(["git", "push", "origin", branchname])
+    puts 'Pushing to origin...'
+    merge_command = IO.popen(['git', 'push', 'origin', branchname])
     print_blocking_output(merge_command)
     branchname
   end
@@ -93,22 +93,22 @@ class CloneJob
     server = hostname || "github.com"
     puts "Cloning #{repo} from #{server}..."
     @git_dir = Git.clone(clone_url_with_token(server, repo), "#{@tmpdir}/#{repo}")
-    puts "Repository cloned!"
+    puts 'Repository cloned!'
   end
 
   def self.setup_git
-    puts "Configuring robot user..."
+    puts 'Configuring robot user...'
     @git_dir.config('user.name', 'Hubot')
     @git_dir.config('user.email', 'cwanstrath+hubot@gmail.com')
-    puts "Configured!"
+    puts 'Configured!'
   end
 
   def self.print_blocking_output(command)
     while (line = command.gets) # intentionally blocking call
       print line
       if line.match(/Merge conflict/) || line.match(/error/)
-        print "Opening issue..."
-        @client.create_issue(@originating_repo, "Merge conflict detected", "Hey, I'm really sorry about this, but there was a merge conflict when I tried to auto-sync the last time. You'll have to resolve this problem manually, I'm afraid. \n\n![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)")
+        print 'Opening issue...'
+        @client.create_issue(@originating_repo, 'Merge conflict detected', "Hey, I'm really sorry about this, but there was a merge conflict when I tried to auto-sync the last time. You'll have to resolve this problem manually, I'm afraid. \n\n![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)")
       end
     end
   end
@@ -119,6 +119,6 @@ class CloneJob
   end
 
   def self.fetch_proper_token(server)
-    server == "github.com" ? @dotcom_token : @ghe_token
+    server == 'github.com' ? @dotcom_token : @ghe_token
   end
 end

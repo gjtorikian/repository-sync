@@ -1,4 +1,4 @@
-require "./app"
+require './app'
 require 'resque/server'
 
 Resque::Server.use Rack::Auth::Basic do |username, password|
@@ -6,5 +6,5 @@ Resque::Server.use Rack::Auth::Basic do |username, password|
 end
 
 run Rack::URLMap.new \
-  "/"       => RepositorySync,
-  "/resque" => Resque::Server.new
+  '/'       => RepositorySync,
+  '/resque' => Resque::Server.new
