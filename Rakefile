@@ -5,12 +5,14 @@ task 'resque:setup' do
   require_relative './lib/clone_job'
 end
 
-require 'rspec/core/rake_task'
-desc 'Run specs'
-RSpec::Core::RakeTask.new do |t|
+if ENV['RACK_ENV'] != 'production'
+  require 'rspec/core/rake_task'
+  desc 'Run specs'
+  RSpec::Core::RakeTask.new do |t|
 
+  end
+  task :default => [:spec]
 end
-task :default => [:spec]
 
 desc 'Alias for resque:work (To run workers on Heroku)'
 task 'jobs:work' => 'resque:work'
