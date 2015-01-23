@@ -26,3 +26,5 @@ doc/
 repos/
 
 *.rdb
+
+.env

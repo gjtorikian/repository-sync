@@ -2,6 +2,7 @@ require 'resque/tasks'
 
 task 'resque:setup' do
   ENV['QUEUE'] = '*'
+  require_relative './lib/clone_job'
 end
 
 require 'rspec/core/rake_task'
