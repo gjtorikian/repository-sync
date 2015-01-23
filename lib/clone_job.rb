@@ -45,6 +45,7 @@ class CloneJob
     @git_dir.remote(remotename).fetch
     @git_dir.branch(branchname).checkout
 
+    commit_message = ENV["#{safe_destination_repo}_COMMIT_MESSAGE"] || 'Sync changes from upstream repository'
     begin
       # lol can't `merge --squash` with the Ruby Git lib.
       public_note = @is_public ? '(is public)' : ''
@@ -52,7 +53,7 @@ class CloneJob
       if @is_public
         merge_command = IO.popen(['git', 'merge', '--squash', "#{remotename}/master"])
         sleep 2
-        @git_dir.commit('Sync changes from upstream repository')
+        @git_dir.commit(commit_message)
       else
         merge_command = IO.popen(['git', 'merge', "#{remotename}/master"])
         sleep 2
@@ -95,7 +96,7 @@ class CloneJob
         puts 'Opening issue...'
         @client.create_issue(@originating_repo, 'Merge conflict detected!', \
                              "Hey, I'm really sorry about this, but there was a merge conflict when " \
-                             "I tried to auto-sync the last time, from #{@after_sha}: `#{line}` \n " \
+                             "I tried to auto-sync the last time, from #{@after_sha}: `#{line}` \n" \
                              "You'll have to resolve this problem manually, I'm afraid. \n\n" \
                              "![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)")
         puts 'Issue opened!'
@@ -116,18 +117,37 @@ class CloneJob
   end
 
   def self.check_and_merge(branchname)
+    files = @client.compare(@destination_repo, 'master', branchname)['files']
     # don't create PRs with empty changesets
-    if @client.compare(@destination_repo, 'master', branchname)['files'].empty?
+    if files.empty?
       puts 'Not creating a PR, no files have changed!'
     else
+      title = ENV["#{safe_destination_repo}_PR_TITLE"] || 'Sync changes from upstream repository'
+      body = ENV["#{safe_destination_repo}_PR_BODY"] || make_pr_body(files)
       new_pr = @client.create_pull_request(@destination_repo, 'master', branchname, \
-                                           'Sync changes from upstream repository', \
-                                           ':zap::zap::zap:')
+                                           title, body)
       puts "PR ##{new_pr[:number]} created!"
       sleep 2 # seems that the PR cannot be merged immediately after it's made?
       @client.merge_pull_request(@destination_repo, new_pr[:number].to_i)
       puts "Merged PR ##{new_pr[:number]}"
     end
+  end
+
+  def self.make_pr_body(files)
+    added = files.select { |f| f['status'] == 'added' }.map { |k| k['filename'] }
+    removed = files.select { |f| f['status'] == 'removed' }.map { |k| k['filename'] }
+    modified = files.select { |f| f['status'] == 'modified' }.map { |k| k['filename'] }
+    body = ''
+    unless added.empty?
+      body << "\n\n### Added files: \n\n* #{added.join("\n* ")}"
+    end
+    unless removed.empty?
+      body << "\n\n### Removed files: \n\n* #{removed.join("\n* ")}"
+    end
+    unless modified.empty?
+      body << "\n\n### Modified files: \n\n* #{modified.join("\n* ")}"
+    end
+    body
   end
 
   def self.delete_branch(branchname)
@@ -142,5 +162,9 @@ class CloneJob
 
   def self.fetch_proper_token(server)
     server == 'github.com' ? @dotcom_token : @ghe_token
+  end
+
+  def self.safe_destination_repo
+    @destination_repo.tr('/-', '_')
   end
 end

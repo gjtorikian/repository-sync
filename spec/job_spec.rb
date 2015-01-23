@@ -85,7 +85,7 @@ describe 'CloneJob' do
             receive(:create_pull_request).with('wherever', \
                                                'master', 'somebranch', \
                                                'Sync changes from upstream repository', \
-                                               ':zap::zap::zap:')
+                                               "\n\n### Added files: \n\n* file1.txt\n* file3.txt\n\n### Removed files: \n\n* file2.txt")
         .and_return(create_pr)
 
       expect(CloneJob.instance_variable_get(:@client)).to \
@@ -95,19 +95,39 @@ describe 'CloneJob' do
     end
 
     it 'compares and merges and files with the custom text' do
-      # expect(CloneJob.instance_variable_get(:@client)).to \
-      # receive(:compare).and_return(compare_some_files)
-      # expect(CloneJob.instance_variable_get(:@client)).to \
-      #       receive(:create_pull_request).with('wherever', \
-      #                                          'master', 'somebranch', \
-      #                                          'Sync changes from upstream repository', \
-      #                                          ':zap::zap::zap:')
-      #   .and_return(create_pr)
-      #
-      # expect(CloneJob.instance_variable_get(:@client)).to \
-      # receive(:merge_pull_request).with('wherever', 1347)
-      #
-      # CloneJob.check_and_merge('somebranch')
+      with_env('wherever_PR_TITLE', 'Hey now') do
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:compare).and_return(compare_some_files)
+
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:create_pull_request).with('wherever', \
+                                           'master', 'somebranch', \
+                                           'Hey now', \
+                                           "\n\n### Added files: \n\n* file1.txt\n* file3.txt\n\n### Removed files: \n\n* file2.txt")
+          .and_return(create_pr)
+
+        expect(CloneJob.instance_variable_get(:@client)).to \
+          receive(:merge_pull_request).with('wherever', 1347)
+
+        CloneJob.check_and_merge('somebranch')
+      end
+
+      with_env('wherever_PR_BODY', 'Great job or whatever') do
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:compare).and_return(compare_some_files)
+
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:create_pull_request).with('wherever', \
+                                           'master', 'somebranch', \
+                                           'Sync changes from upstream repository', \
+                                           'Great job or whatever')
+          .and_return(create_pr)
+
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:merge_pull_request).with('wherever', 1347)
+
+        CloneJob.check_and_merge('somebranch')
+      end
     end
   end
 end
