@@ -1,17 +1,20 @@
+begin
+  require 'dotenv'
+rescue LoadError
+end
+
 require 'sinatra/base'
 require 'json'
-require 'fileutils'
-require 'octokit'
 require 'resque'
 require 'redis'
 require 'openssl'
 require 'base64'
 
 require_relative './helpers'
-require_relative './clone_job'
 
 class RepositorySync < Sinatra::Base
   set :root, File.dirname(__FILE__)
+  Dotenv.load if Sinatra::Base.development?
 
   configure do
     if ENV['RACK_ENV'] == 'production'
@@ -54,10 +57,12 @@ class RepositorySync < Sinatra::Base
 
   post '/update_public' do
     do_the_work(true)
+    'Processing...'
   end
 
   post '/update_private' do
     do_the_work(false)
+    'Processing...'
   end
 
   helpers Helpers

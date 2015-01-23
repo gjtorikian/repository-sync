@@ -1,3 +1,6 @@
+require 'fileutils'
+require_relative './clone_job'
+
 module Helpers
   def signatures_match?(payload_body, github_signature)
     return true if Sinatra::Base.development?
@@ -8,6 +11,7 @@ module Helpers
   def process_payload(payload)
     @originating_repo = "#{payload['repository']['owner']['name']}/#{payload['repository']['name']}"
     @originating_hostname = payload['repository']['url'].match(%r{//(.+?)/})[1]
+    @after_sha = payload['after']
   end
 
   def dotcom_token
@@ -24,7 +28,7 @@ module Helpers
 
   def do_the_work(is_public)
     in_tmpdir do |tmpdir|
-      Resque.enqueue(CloneJob, tmpdir, dotcom_token, ghe_token, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, is_public)
+      Resque.enqueue(CloneJob, tmpdir, @after_sha, dotcom_token, ghe_token, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, is_public)
     end
   end
 

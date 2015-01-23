@@ -1,9 +1,10 @@
 require 'git'
+require 'octokit'
 
 class CloneJob
   @queue = :default
 
-  def self.perform(tmpdir, dotcom_token, ghe_token, destination_hostname, destination_repo, originating_hostname, originating_repo, is_public)
+  def self.perform(tmpdir, after_sha, dotcom_token, ghe_token, destination_hostname, destination_repo, originating_hostname, originating_repo, is_public)
     @tmpdir = tmpdir
 
     @dotcom_token = dotcom_token
@@ -16,17 +17,18 @@ class CloneJob
     @originating_hostname = originating_hostname
 
     @is_public = is_public
+    @after_sha = after_sha
 
     clone_repo(@destination_hostname, @destination_repo)
 
     Dir.chdir "#{@tmpdir}/#{@destination_repo}" do
       setup_git
+      @client = setup_octokit
+
       branchname, message = update_repo
       return message if branchname.nil?
 
       puts "Working on branch #{branchname}..."
-
-      @client = setup_octokit
 
       check_and_merge(branchname)
       delete_branch(branchname)
@@ -88,10 +90,15 @@ class CloneJob
 
   def self.print_blocking_output(command)
     while (line = command.gets) # intentionally blocking call
-      print line
-      if line.match(/Merge conflict/) || line.match(/error/)
-        print 'Opening issue...'
-        @client.create_issue(@originating_repo, 'Merge conflict detected', "Hey, I'm really sorry about this, but there was a merge conflict when I tried to auto-sync the last time. You'll have to resolve this problem manually, I'm afraid. \n\n![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)")
+      puts line
+      if line.match(/Merge conflict/i) || line.match(/error/i)
+        puts 'Opening issue...'
+        @client.create_issue(@originating_repo, 'Merge conflict detected!', \
+                             "Hey, I'm really sorry about this, but there was a merge conflict when " \
+                             "I tried to auto-sync the last time, from #{@after_sha}: `#{line}` \n " \
+                             "You'll have to resolve this problem manually, I'm afraid. \n\n" \
+                             "![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)")
+        puts 'Issue opened!'
       end
     end
   end
