@@ -28,4 +28,4 @@ script/bootstrap
 
 echo "==> Running tests…"
 
-rake
+bundle exec rake
