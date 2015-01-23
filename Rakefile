@@ -1,6 +1,8 @@
 require 'resque/tasks'
+require_relative './config/redis'
 
 task 'resque:setup' do
+  configure_redis
   ENV['QUEUE'] = '*'
   require_relative './lib/clone_job'
 end
