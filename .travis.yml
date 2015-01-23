@@ -6,3 +6,5 @@ rvm:
   - 2.1
 sudo: false
 cache: bundler
+notifications:
+  email: false
