@@ -68,6 +68,6 @@ For the examples below, we'll assuming repository-sync is committing into a repo
 
 * `#{safe_destination_repo}_COMMIT_MESSAGE`: This determines the commit message to use when committing into your public repository. Example: `gjtorikian_this_test_COMMIT_MESSAGE`.
 
-* `#{safe_destination_repo}_PR_TITLE`: This determines the title of the PR that's opened into either repository. Example: `gjtorikian_this_test}_PR_TITLE`. The default string is `'Sync changes from upstream repository'`.
+* `#{safe_destination_repo}_PR_TITLE`: This determines the title of the PR that's opened into either repository. Example: `gjtorikian_this_test_PR_TITLE`. The default string is `'Sync changes from upstream repository'`.
 
-* `#{safe_destination_repo}_PR_BODY`: This determines the body text of the PR that's opened into either repository. Example: `gjtorikian_this_test}_PR_BODY`. The default string is a listing of the added, modified, and removed files in the PR.
+* `#{safe_destination_repo}_PR_BODY`: This determines the body text of the PR that's opened into either repository. Example: `gjtorikian_this_test_PR_BODY`. The default string is a listing of the added, modified, and removed files in the PR.
