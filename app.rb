@@ -7,6 +7,7 @@ require 'redis'
 require 'openssl'
 require 'base64'
 
+require './helpers'
 require './clone_job'
 
 class RepositorySync < Sinatra::Base
@@ -14,7 +15,7 @@ class RepositorySync < Sinatra::Base
 
   configure do
     if ENV['RACK_ENV'] == 'production'
-      uri = URI.parse( ENV['REDISTOGO_URL'])
+      uri = URI.parse(ENV['REDISTOGO_URL'])
       REDIS = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
       Resque.redis = REDIS
     else
@@ -26,17 +27,25 @@ class RepositorySync < Sinatra::Base
     # trim trailing slashes
     request.path_info.sub!(/\/$/, '')
     pass unless %w(update_public update_private).include? request.path_info.split('/')[1]
-    # ensure signature is correct
+
+    # ensure there's a payload
     request.body.rewind
-    payload_body = request.body.read
-    verify_signature(payload_body)
-    # keep some important vars
-    @payload = JSON.parse payload_body
-    @originating_repo = "#{@payload['repository']['owner']['name']}/#{@payload['repository']['name']}"
-    @originating_hostname = @payload['repository']['url'].match(%r{//(.+?)/})[1]
+    payload_body = request.body.read.to_s
+    halt 500, 'Missing body payload!' if payload_body.nil? || payload_body.empty?
+
+    # ensure signature is correct
+    github_signature = request.env['HTTP_X_HUB_SIGNATURE']
+    halt 500, 'Signatures didn\'t match!' unless signatures_match?(payload_body, github_signature)
+
     @destination_repo = params[:dest_repo]
-    @destination_hostname = params[:hostname] || 'github.com'
-    check_params params
+    halt 500, 'Missing `dest_repo` argument' if @destination_repo.nil?
+
+    @payload = JSON.parse(payload_body)
+    halt 202, "Payload was not for master, was for #{@payload['ref']}, aborting." unless master_branch?(@payload)
+
+    # keep some important vars
+    process_payload(@payload)
+    @destination_hostname = params[:destination_hostname] || 'github.com'
   end
 
   get '/' do
@@ -51,44 +60,5 @@ class RepositorySync < Sinatra::Base
     do_the_work(false)
   end
 
-  helpers do
-
-    def verify_signature(payload_body)
-      return true if Sinatra::Base.development? || ENV['SECRET_TOKEN'].nil?
-      signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), ENV['SECRET_TOKEN'], payload_body)
-      return halt 500, 'Signatures didn\'t match!' unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE'])
-    end
-
-    def check_params(params)
-      return halt 500, 'Missing `dest_repo` argument' if @destination_repo.nil?
-      return halt 202, 'Payload was not for master, aborting.' unless master_branch?(@payload)
-    end
-
-    def dotcom_token
-      ENV['DOTCOM_MACHINE_USER_TOKEN']
-    end
-
-    def ghe_token
-      ENV['GHE_MACHINE_USER_TOKEN']
-    end
-
-    def master_branch?(payload)
-      payload['ref'] == 'refs/heads/master'
-    end
-
-    def do_the_work(is_public)
-      in_tmpdir do |tmpdir|
-        Resque.enqueue(CloneJob, tmpdir, dotcom_token, ghe_token, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, is_public)
-      end
-    end
-
-    def in_tmpdir
-      path = File.expand_path "#{Dir.tmpdir}/repository-sync/repos/#{Time.now.to_i}#{rand(1000)}/"
-      FileUtils.mkdir_p path
-      puts "Directory created at: #{path}"
-      yield path
-    ensure
-      FileUtils.rm_rf(path) if File.exist?(path) && !Sinatra::Base.development?
-    end
-  end
+  helpers Helpers
 end

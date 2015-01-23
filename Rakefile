@@ -5,6 +5,13 @@ task 'resque:setup' do
   ENV['QUEUE'] = '*'
 end
 
+require 'rspec/core/rake_task'
+desc 'Run specs'
+RSpec::Core::RakeTask.new do |t|
+
+end
+task :default => [:spec]
+
 desc 'Alias for resque:work (To run workers on Heroku)'
 task 'jobs:work' => 'resque:work'
 
