@@ -7,8 +7,8 @@ require 'redis'
 require 'openssl'
 require 'base64'
 
-require './helpers'
-require './clone_job'
+require_relative './helpers'
+require_relative './clone_job'
 
 class RepositorySync < Sinatra::Base
   set :root, File.dirname(__FILE__)

@@ -5,8 +5,7 @@ require 'bundler/setup'
 require 'rack/test'
 require 'rspec'
 require 'webmock/rspec'
-require_relative '../app'
-require_relative '../helpers'
+require_relative '../lib/app'
 
 WebMock.disable_net_connect!
 

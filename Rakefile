@@ -1,4 +1,3 @@
-require './app.rb'
 require 'resque/tasks'
 
 task 'resque:setup' do
