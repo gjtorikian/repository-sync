@@ -6,6 +6,7 @@ require 'rack/test'
 require 'rspec'
 require 'webmock/rspec'
 require_relative '../lib/app'
+require 'resque_spec'
 
 WebMock.disable_net_connect!
 
@@ -39,4 +40,12 @@ end
 
 def fixture(path)
   File.open("spec/fixtures/#{path}").read
+end
+
+def temp_repo
+  File.expand_path(File.join('spec/fixtures/working.git'))
+end
+
+def octokit_version
+  Gem.loaded_specs['octokit'].version
 end

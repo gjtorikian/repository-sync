@@ -7,6 +7,7 @@ describe 'endpoints' do
 
   before do
     allow_any_instance_of(app).to receive(:signatures_match?).and_return(true)
+    ResqueSpec.reset!
   end
 
   describe 'updating public repositories' do
@@ -34,6 +35,7 @@ describe 'endpoints' do
     it 'can work' do
       post '/update_public?dest_repo=gjtorikian/fake', incoming
       expect(last_response.status).to eql(200)
+      expect(CloneJob).to have_queue_size_of(1)
     end
   end
 
@@ -62,6 +64,7 @@ describe 'endpoints' do
     it 'can work' do
       post '/update_private?dest_repo=gjtorikian/fake', incoming
       expect(last_response.status).to eql(200)
+      expect(CloneJob).to have_queue_size_of(1)
     end
   end
 end
