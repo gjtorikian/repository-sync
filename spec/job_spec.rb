@@ -61,6 +61,8 @@ describe 'CloneJob' do
   describe 'api actions' do
     let(:compare_no_files) { JSON.parse fixture('compare_no_files.json') }
     let(:compare_some_files) { JSON.parse fixture('compare_some_files.json') }
+    let(:compare_single_file) { JSON.parse fixture('compare_single_file.json') }
+
     # octokit returns a Sawyer hash with symbolized keys
     let(:create_pr) { JSON.parse(fixture('create_pr.json')).inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo} }
 
@@ -122,6 +124,25 @@ describe 'CloneJob' do
                                            'Sync changes from upstream repository', \
                                            'Great job or whatever')
           .and_return(create_pr)
+
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:merge_pull_request).with('wherever', 1347)
+
+        CloneJob.check_and_merge('somebranch')
+      end
+    end
+
+    it "genearates descriptive PR titles for single-file changes" do
+      with_env('wherever_PR_BODY', 'Great job or whatever') do
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:compare).and_return(compare_single_file)
+
+        expect(CloneJob.instance_variable_get(:@client)).to \
+        receive(:create_pull_request).with('wherever', \
+        'master', 'somebranch', \
+        "Added file1.txt", \
+        'Great job or whatever')
+        .and_return(create_pr)
 
         expect(CloneJob.instance_variable_get(:@client)).to \
         receive(:merge_pull_request).with('wherever', 1347)
