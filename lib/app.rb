@@ -11,6 +11,7 @@ require 'base64'
 
 require_relative '../config/redis'
 require_relative './helpers'
+require_relative './cloner'
 
 class RepositorySync < Sinatra::Base
   set :root, File.dirname(__FILE__)
