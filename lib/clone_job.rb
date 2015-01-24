@@ -122,7 +122,7 @@ class CloneJob
     if files.empty?
       puts 'Not creating a PR, no files have changed!'
     else
-      title = ENV["#{safe_destination_repo}_PR_TITLE"] || 'Sync changes from upstream repository'
+      title = ENV["#{safe_destination_repo}_PR_TITLE"] || make_pr_title(files)
       body = ENV["#{safe_destination_repo}_PR_BODY"] || make_pr_body(files)
       new_pr = @client.create_pull_request(@destination_repo, 'master', branchname, \
                                            title, body)
@@ -148,6 +148,14 @@ class CloneJob
       body << "\n\n### Modified files: \n\n* #{modified.join("\n* ")}"
     end
     body
+  end
+
+  def self.make_pr_title(files)
+    if files.count == 1
+      "#{files.first["status"].capitalize} #{files.first["filename"]}"
+    else
+      'Sync changes from upstream repository'
+    end
   end
 
   def self.delete_branch(branchname)
