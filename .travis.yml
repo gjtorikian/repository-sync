@@ -8,3 +8,8 @@ sudo: false
 cache: bundler
 notifications:
   email: false
+
+env:
+  global:
+    MACHINE_USER_NAME: Hubot
+    MACHINE_USER_EMAIL: hubot@example.com
