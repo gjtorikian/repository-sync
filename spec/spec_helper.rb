@@ -7,6 +7,7 @@ require 'rspec'
 require 'webmock/rspec'
 require_relative '../lib/app'
 require 'resque_spec'
+require "fileutils"
 
 WebMock.disable_net_connect!
 
@@ -38,8 +39,12 @@ def with_env(key, value)
   ENV[key] = old_env
 end
 
-def fixture(path)
-  File.open("spec/fixtures/#{path}").read
+def fixture_path(fixture)
+  File.expand_path "fixtures/#{fixture}", File.dirname(__FILE__)
+end
+
+def fixture(fixture)
+  File.open(fixture_path(fixture)).read
 end
 
 def temp_repo
@@ -48,4 +53,13 @@ end
 
 def octokit_version
   Gem.loaded_specs['octokit'].version
+end
+
+def tmpdir
+  File.expand_path "../tmp", File.dirname(__FILE__)
+end
+
+def setup_tmpdir
+  FileUtils.rm_rf tmpdir
+  FileUtils.mkdir tmpdir
 end
