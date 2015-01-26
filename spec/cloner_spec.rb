@@ -35,7 +35,7 @@ describe 'Cloner' do
   end
 
   it "creates the safe repo name" do
-    expect(cloner.safe_destination_repo).to eql("gjtorikian_destination_repo")
+    expect(cloner.safe_destination_repo).to eql("GJTORIKIAN_DESTINATION_REPO")
   end
 
   it "defaults to the default commit message" do
