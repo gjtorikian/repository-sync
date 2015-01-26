@@ -3,21 +3,16 @@ require "open3"
 class Cloner
 
   DEFAULTS = {
-    :tmpdir               => Dir.mktmpdir("repository-sync"),
+    :tmpdir               => Dir.mktmpdir("repository-sync/repos/#{Time.now.to_i}#{rand(1000)}"),
     :after_sha            => nil,
-    :dotcom_token         => nil,
-    :ghe_token            => nil,
     :destination_hostname => "github.com",
     :destination_repo     => nil,
     :originating_hostname => "github.com",
     :originating_repo     => nil,
-    :public               => false,
-    :git                  => nil
   }
 
-  attr_accessor :tmpdir, :after_sha, :dotcom_token, :ghe_token, :destination_hostname
-  attr_accessor :destination_repo, :originating_hostname, :originating_repo, :public
-  alias_method :public?, :public
+  attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
+  attr_accessor :originating_hostname, :originating_repo
 
   def initialize(options)
     DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
@@ -31,21 +26,44 @@ class Cloner
 
     git.config('user.name', ENV['MACHINE_USER_NAME'])
     git.config('user.email', ENV['MACHINE_USER_EMAIL'])
+
+    logger.info "New Cloner instance initialized"
+    DEFAULTS.each { |key,value| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
 
   def clone
     Dir.chdir "#{tmpdir}/#{destination_repo}" do
-      add_remote
-      fetch
-      merge
-      push
-      create_pull_request
-      delete_branch
+      Bundler.with_clean_env do
+        add_remote
+        fetch
+        merge
+        push
+        create_pull_request
+        delete_branch
+        logger.info "fin"
+      end
     end
+  rescue
+    raise
+  ensure
+    FileUtils.rm_rf(tmpdir)
+    logger.info "Cleaning up #{tmpdir}"
   end
 
-  def token
-    @token ||= (destination_hostname == 'github.com' ? dotcom_token : ghe_token)
+  def originating_token
+    @originating_token ||= (originating_hostname == 'github.com' ? dotcom_token : ghe_token)
+  end
+
+  def destination_token
+    @destination_token ||= (destination_hostname == 'github.com' ? dotcom_token : ghe_token)
+  end
+
+  def dotcom_token
+    ENV['DOTCOM_MACHINE_USER_TOKEN']
+  end
+
+  def ghe_token
+    ENV['GHE_MACHINE_USER_TOKEN']
   end
 
   def remote_name
@@ -64,12 +82,22 @@ class Cloner
     @commit_message ||= ENV["#{safe_destination_repo.upcase}_COMMIT_MESSAGE"] || 'Sync changes from upstream repository'
   end
 
+  def public?
+    @public ||= !client.repository(destination_repo)[:private]
+  rescue
+    false
+  end
+
   def files
     @files ||= client.compare(destination_repo, 'master', branch_name)['files']
   end
 
-  def clone_url_with_token
-    @clone_url_with_token ||= "https://#{token}:x-oauth-basic@#{originating_hostname}/#{originating_repo}.git"
+  def originating_repo_with_token
+    @originating_repo_with_token ||= "https://#{originating_token}:x-oauth-basic@#{originating_hostname}/#{originating_repo}.git"
+  end
+
+  def destination_repo_with_token
+    @destination_repo_with_token ||= "https://#{destination_token}:x-oauth-basic@#{destination_hostname}/#{destination_repo}.git"
   end
 
   def pull_request_title
@@ -93,18 +121,19 @@ class Cloner
   end
 
   def client
-    @client ||= Octokit::Client.new(:access_token => token)
+    @client ||= Octokit::Client.new(:access_token => destination_token)
   end
 
   def git
     @git ||= begin
       logger.info "Cloning #{destination_repo} from #{destination_hostname}..."
-      Git.clone(clone_url_with_token, "#{tmpdir}/#{destination_repo}")
+      Git.clone(destination_repo_with_token, "#{tmpdir}/#{destination_repo}")
     end
   end
 
   def run_command(*args)
     logger.info "Running command #{args.join(" ")}"
+    output = status = nil
     output, status = Open3.capture2e(*args)
     logger.info "Result: #{output}"
     if status != 0
@@ -130,23 +159,26 @@ class Cloner
 
   def add_remote
     logger.info "Adding remote for #{originating_repo} on #{originating_hostname}..."
-    git.add_remote(remote_name, clone_url_with_token)
+    git.add_remote(remote_name, originating_repo_with_token)
   end
 
   def fetch
     logger.info "Fetching #{originating_repo}..."
     git.remote(remote_name).fetch
-    git.branch(branch_name).checkout
   end
 
   def merge
     public_note = public? ? '(is public)' : ''
-    logger.info "Merging #{originating_repo}/master into #{remote_name} #{public_note}..."
+
+    logger.info "Checking out #{branch_name}"
+    git.branch(branch_name).checkout
+
+    logger.info "Merging #{originating_repo}/master into #{branch_name} #{public_note}..."
     if public?
+      output = run_command('git', 'merge', "#{remote_name}/master")
+    else
       output = run_command('git', 'merge', '--squash', "#{remote_name}/master")
       git.commit(commit_message)
-    else
-      output = run_command('git', 'merge', "#{remote_name}/master")
     end
   rescue Git::GitExecuteError => e
     if e.message =~ /nothing to commit/
@@ -158,7 +190,7 @@ class Cloner
 
   def push
     logger.info "Pushing to origin..."
-    run_command(['git', 'push', 'origin', branch_name])
+    run_command('git', 'push', 'origin', branch_name)
   end
 
   def create_pull_request

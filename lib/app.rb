@@ -51,12 +51,12 @@ class RepositorySync < Sinatra::Base
   end
 
   post '/update_public' do
-    do_the_work(true)
+    do_the_work
     'Processing...'
   end
 
   post '/update_private' do
-    do_the_work(false)
+    do_the_work
     'Processing...'
   end
 
