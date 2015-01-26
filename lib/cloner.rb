@@ -73,7 +73,11 @@ class Cloner
   end
 
   def pull_request_title
-    ENV["#{safe_destination_repo.upcase}_PR_TITLE"] || 'Sync changes from upstream repository'
+    if files.count == 1
+      "#{files.first["status"].capitalize} #{files.first["filename"]}"
+    else
+      ENV["#{safe_destination_repo.upcase}_PR_TITLE"] || 'Sync changes from upstream repository'
+    end
   end
 
   def pull_request_body

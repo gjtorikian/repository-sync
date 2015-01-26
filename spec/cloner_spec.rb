@@ -61,13 +61,29 @@ describe 'Cloner' do
   end
 
   it "defaults to the default pull request title" do
+    url = "https://api.github.com/repos/gjtorikian/destination_repo/compare/master...#{cloner.branch_name}"
+    stub_request(:get, url).
+    to_return(:status => 200, :body => fixture("compare_some_files.json"), :headers => { 'Content-Type' => 'application/json' })
+
     expect(cloner.pull_request_title).to eql("Sync changes from upstream repository")
   end
 
   it "respects user supplied pull-request titles" do
+    url = "https://api.github.com/repos/gjtorikian/destination_repo/compare/master...#{cloner.branch_name}"
+    stub_request(:get, url).
+    to_return(:status => 200, :body => fixture("compare_some_files.json"), :headers => { 'Content-Type' => 'application/json' })
+
     with_env "GJTORIKIAN_DESTINATION_REPO_PR_TITLE", "Some title" do
       expect(cloner.pull_request_title).to eql("Some title")
     end
+  end
+
+  it "uses descriptive pull request titles when only one files has changed" do
+    url = "https://api.github.com/repos/gjtorikian/destination_repo/compare/master...#{cloner.branch_name}"
+    stub_request(:get, url).
+    to_return(:status => 200, :body => fixture("compare_single_file.json"), :headers => { 'Content-Type' => 'application/json' })
+
+    expect(cloner.pull_request_title).to eql("Added file1.txt")
   end
 
   it "geneates the pull request body" do
