@@ -10,7 +10,8 @@ class Cloner
     :destination_repo     => nil,
     :originating_hostname => "github.com",
     :originating_repo     => nil,
-    :squash               => true
+    :squash               => true,
+    :git                  => nil,
   }
 
   attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
@@ -30,6 +31,8 @@ class Cloner
     git.config('user.name', ENV['MACHINE_USER_NAME'])
     git.config('user.email', ENV['MACHINE_USER_EMAIL'])
 
+    logger.level = Logger::WARN if ENV["RACK_ENV"] == "test"
+    
     logger.info "New Cloner instance initialized"
     DEFAULTS.each { |key,value| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
