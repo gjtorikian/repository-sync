@@ -24,7 +24,6 @@ class RepositorySync < Sinatra::Base
   before do
     # trim trailing slashes
     request.path_info.sub!(/\/$/, '')
-    pass unless %w(update_public update_private).include? request.path_info.split('/')[1]
 
     # ensure there's a payload
     request.body.rewind

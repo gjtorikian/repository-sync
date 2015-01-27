@@ -153,8 +153,6 @@ class Cloner
   end
 
   def report_error(command_output)
-    logger.warn command_output
-    return if Sinatra::Base.development?
     return unless command_output =~ /Merge conflict|error/i
     body = "Hey, I'm really sorry about this, but there was a merge conflict when "
     body << "I tried to auto-sync the last time, from #{after_sha}:\n"
