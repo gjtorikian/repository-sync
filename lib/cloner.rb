@@ -32,12 +32,13 @@ class Cloner
       end
     end
 
+    git_init
+
     DEFAULTS.each { |key,value| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
 
   def clone
     Bundler.with_clean_env do
-      git_init
       Dir.chdir "#{tmpdir}/#{destination_repo}" do
         add_remote
         fetch
