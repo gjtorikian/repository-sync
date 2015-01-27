@@ -61,10 +61,10 @@ that, when hitting an endpoint with the `squash` path parameter, this tool will 
 
 Believe it or not, there are a few more environment variables you can set! These determine the text used by repository-sync when creating commit messages and pull requests. They are also dependent on the name of the destination repository. All of these values are optional.
 
-For the examples below, we'll assuming repository-sync is committing into a repository called `gjtorikian/this-test`. Because environment variables cannot use the `/` or `-` characters, you must substitute it within the destination repository name as `_`: `gjtorikian_this_test`. The default string is `'Sync changes from upstream repository'`.
+For the examples below, we'll assuming repository-sync is committing into a repository called `gjtorikian/this-test`. Because environment variables cannot use the `/` or `-` characters, you must substitute those characters in the repository name as `_`. The repository name should also be capitalized. Using our example repository, that would mean a prefix of `GJTORIKIAN_THIS_TEST`.
 
-* `#{safe_destination_repo}_COMMIT_MESSAGE`: This determines the commit message to use when committing into your public repository. Example: `gjtorikian_this_test_COMMIT_MESSAGE`.
+* `#{safe_destination_repo}_COMMIT_MESSAGE`: This determines the commit message to use when committing into your public repository. Example: `GJTORIKIAN_THIS_TEST_COMMIT_MESSAGE`.
 
-* `#{safe_destination_repo}_PR_TITLE`: This determines the title of the PR that's opened into either repository. Example: `gjtorikian_this_test_PR_TITLE`. The default string is `'Sync changes from upstream repository'`.
+* `#{safe_destination_repo}_PR_TITLE`: This determines the title of the PR that's opened into either repository. Example: `GJTORIKIAN_THIS_TEST_PR_TITLE`. The default string is `'Sync changes from upstream repository'`.
 
-* `#{safe_destination_repo}_PR_BODY`: This determines the body text of the PR that's opened into either repository. Example: `gjtorikian_this_test_PR_BODY`. The default string is a listing of the added, modified, and removed files in the PR.
+* `#{safe_destination_repo}_PR_BODY`: This determines the body text of the PR that's opened into either repository. Example: `GJTORIKIAN_THIS_TEST_PR_BODY`. The default string is a listing of the added, modified, and removed files in the PR.
