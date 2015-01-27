@@ -19,6 +19,6 @@ module Helpers
   end
 
   def do_the_work
-    Resque.enqueue(CloneJob, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo)
+    Resque.enqueue(CloneJob, @after_sha, @squash, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo)
   end
 end

@@ -41,6 +41,8 @@ class RepositorySync < Sinatra::Base
     @payload = JSON.parse(payload_body)
     halt 202, "Payload was not for master, was for #{@payload['ref']}, aborting." unless master_branch?(@payload)
 
+    @squash = params[:squash]
+
     # keep some important vars
     process_payload(@payload)
     @destination_hostname = params[:destination_hostname] || 'github.com'
@@ -50,7 +52,7 @@ class RepositorySync < Sinatra::Base
     'You\'ll want to make a POST to /sync. Check the documentation for more info.'
   end
 
-  post '/update_private' do
+  post '/sync' do
     do_the_work
     'Processing...'
   end

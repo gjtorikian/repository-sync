@@ -5,10 +5,11 @@ require_relative "cloner"
 class CloneJob
   @queue = :default
 
-  def self.perform(after_sha, destination_hostname, destination_repo, originating_hostname, originating_repo)
+  def self.perform(after_sha, squash, destination_hostname, destination_repo, originating_hostname, originating_repo)
 
     cloner = Cloner.new({
       :after_sha            => after_sha,
+      :squash               => squash,
       :destination_hostname => destination_hostname,
       :destination_repo     => destination_repo,
       :originating_hostname => originating_hostname,

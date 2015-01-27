@@ -5,6 +5,7 @@ class Cloner
   DEFAULTS = {
     :tmpdir               => Dir.mktmpdir("repository-sync/repos/#{Time.now.to_i}#{rand(1000)}"),
     :after_sha            => nil,
+    :squash               => nil,
     :destination_hostname => "github.com",
     :destination_repo     => nil,
     :originating_hostname => "github.com",
@@ -80,12 +81,6 @@ class Cloner
 
   def commit_message
     @commit_message ||= ENV["#{safe_destination_repo.upcase}_COMMIT_MESSAGE"] || 'Sync changes from upstream repository'
-  end
-
-  def public?
-    @public ||= !client.repository(destination_repo)[:private]
-  rescue
-    false
   end
 
   def files
@@ -168,13 +163,11 @@ class Cloner
   end
 
   def merge
-    public_note = public? ? '(is public)' : ''
-
     logger.info "Checking out #{branch_name}"
     git.branch(branch_name).checkout
 
-    logger.info "Merging #{originating_repo}/master into #{branch_name} #{public_note}..."
-    if public?
+    logger.info "Merging #{originating_repo}/master into #{branch_name}..."
+    if @squash.nil?
       output = run_command('git', 'merge', "#{remote_name}/master")
     else
       output = run_command('git', 'merge', '--squash', "#{remote_name}/master")
