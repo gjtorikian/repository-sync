@@ -7,7 +7,7 @@ describe 'Main app' do
 
   it 'serves the index' do
     get '/'
-    expect(last_response.body).to eql('I think you misunderstand how to use this.')
+    expect(last_response.body).to eql('You\'ll want to make a POST to /sync. Check the documentation for more info.')
   end
 
   it 'serves nothing for any other page' do

@@ -5,6 +5,7 @@ class Cloner
   DEFAULTS = {
     :tmpdir               => Dir.mktmpdir("repository-sync/repos/#{Time.now.to_i}#{rand(1000)}"),
     :after_sha            => nil,
+    :squash               => nil,
     :destination_hostname => "github.com",
     :destination_repo     => nil,
     :originating_hostname => "github.com",
