@@ -32,7 +32,7 @@ class Cloner
     git.config('user.email', ENV['MACHINE_USER_EMAIL'])
 
     logger.level = Logger::WARN if ENV["RACK_ENV"] == "test"
-    
+
     logger.info "New Cloner instance initialized"
     DEFAULTS.each { |key,value| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
@@ -147,6 +147,8 @@ class Cloner
     logger.info "Running command #{args.join(" ")}"
     output = status = nil
     output, status = Open3.capture2e(*args)
+    output = output.gsub(/#{dotcom_token}/, "<TOKEN>") if dotcom_token
+    output = output.gsub(/#{ghe_token}/, "<TOKEN>") if ghe_token
     logger.info "Result: #{output}"
     if status != 0
       report_error(output)
