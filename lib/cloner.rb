@@ -3,7 +3,7 @@ require "open3"
 class Cloner
 
   DEFAULTS = {
-    :tmpdir               => Dir.mktmpdir("repository-sync/repos/#{Time.now.to_i}#{rand(1000)}"),
+    :tmpdir               => nil,
     :after_sha            => nil,
     :squash               => nil,
     :destination_hostname => "github.com",
@@ -19,6 +19,7 @@ class Cloner
   alias_method :squash?, :squash
 
   def initialize(options)
+    DEFAULTS[:tmpdir] = Dir.mktmpdir("repository-sync/repos/#{Time.now.to_i}#{rand(1000)}")
     DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
 
     if destination_hostname != 'github.com'
