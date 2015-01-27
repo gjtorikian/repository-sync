@@ -1,14 +1,15 @@
 require "open3"
 
 class Cloner
+  GITHUB_DOMAIN = GITHUB_DOMAIN
 
   DEFAULTS = {
     :tmpdir               => nil,
     :after_sha            => nil,
     :squash               => nil,
-    :destination_hostname => "github.com",
+    :destination_hostname => GITHUB_DOMAIN,
     :destination_repo     => nil,
-    :originating_hostname => "github.com",
+    :originating_hostname => GITHUB_DOMAIN,
     :originating_repo     => nil,
     :squash               => true,
     :git                  => nil,
@@ -25,7 +26,7 @@ class Cloner
     DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
     @tmpdir ||= Dir.mktmpdir("repository-sync")
 
-    if destination_hostname != 'github.com'
+    if destination_hostname != GITHUB_DOMAIN
       Octokit.configure do |c|
         c.api_endpoint = "https://#{destination_hostname}/api/v3/"
         c.web_endpoint = "https://#{destination_hostname}"
@@ -58,11 +59,11 @@ class Cloner
   end
 
   def originating_token
-    @originating_token ||= (originating_hostname == 'github.com' ? dotcom_token : ghe_token)
+    @originating_token ||= (originating_hostname == GITHUB_DOMAIN ? dotcom_token : ghe_token)
   end
 
   def destination_token
-    @destination_token ||= (destination_hostname == 'github.com' ? dotcom_token : ghe_token)
+    @destination_token ||= (destination_hostname == GITHUB_DOMAIN ? dotcom_token : ghe_token)
   end
 
   def dotcom_token
