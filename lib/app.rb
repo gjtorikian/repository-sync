@@ -51,13 +51,11 @@ class RepositorySync < Sinatra::Base
   end
 
   post '/update_public' do
-    do_the_work
-    'Processing...'
+    Resque.enqueue(CloneJob, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, true)
   end
 
   post '/update_private' do
-    do_the_work
-    'Processing...'
+    Resque.enqueue(CloneJob, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, false)
   end
 
   helpers Helpers

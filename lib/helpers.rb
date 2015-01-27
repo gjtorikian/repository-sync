@@ -17,8 +17,4 @@ module Helpers
   def master_branch?(payload)
     payload['ref'] == 'refs/heads/master'
   end
-
-  def do_the_work
-    Resque.enqueue(CloneJob, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo)
-  end
 end

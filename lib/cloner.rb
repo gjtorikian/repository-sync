@@ -9,10 +9,12 @@ class Cloner
     :destination_repo     => nil,
     :originating_hostname => "github.com",
     :originating_repo     => nil,
+    :squash               => true
   }
 
   attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
-  attr_accessor :originating_hostname, :originating_repo
+  attr_accessor :originating_hostname, :originating_repo, :squash
+  alias_method :squash?, :squash
 
   def initialize(options)
     DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
@@ -43,7 +45,8 @@ class Cloner
         logger.info "fin"
       end
     end
-  rescue
+  rescue StandardError => e
+    logger.warn e
     raise
   ensure
     FileUtils.rm_rf(tmpdir)
@@ -82,22 +85,23 @@ class Cloner
     @commit_message ||= ENV["#{safe_destination_repo.upcase}_COMMIT_MESSAGE"] || 'Sync changes from upstream repository'
   end
 
-  def public?
-    @public ||= !client.repository(destination_repo)[:private]
-  rescue
-    false
-  end
-
   def files
     @files ||= client.compare(destination_repo, 'master', branch_name)['files']
   end
 
-  def originating_repo_with_token
-    @originating_repo_with_token ||= "https://#{originating_token}:x-oauth-basic@#{originating_hostname}/#{originating_repo}.git"
+  def url_with_token(remote=:destination)
+    token    = (remote == :destination) ? destination_token    : originating_token
+    hostname = (remote == :destination) ? destination_hostname : originating_hostname
+    repo     = (remote == :destination) ? destination_repo     : originating_repo
+    "https://#{token}:x-oauth-basic@#{hostname}/#{repo}.git"
   end
 
-  def destination_repo_with_token
-    @destination_repo_with_token ||= "https://#{destination_token}:x-oauth-basic@#{destination_hostname}/#{destination_repo}.git"
+  def originating_url_with_token
+    @originating_url_with_token ||= url_with_token(:originating)
+  end
+
+  def destination_url_with_token
+    @destination_url_with_token ||= url_with_token(:destination)
   end
 
   def pull_request_title
@@ -127,7 +131,7 @@ class Cloner
   def git
     @git ||= begin
       logger.info "Cloning #{destination_repo} from #{destination_hostname}..."
-      Git.clone(destination_repo_with_token, "#{tmpdir}/#{destination_repo}")
+      Git.clone(destination_url_with_token, "#{tmpdir}/#{destination_repo}")
     end
   end
 
@@ -144,6 +148,8 @@ class Cloner
   end
 
   def report_error(command_output)
+    logger.warn command_output
+    return if Sinatra::Base.development?
     return unless command_output =~ /Merge conflict|error/i
     body = "Hey, I'm really sorry about this, but there was a merge conflict when "
     body << "I tried to auto-sync the last time, from #{after_sha}:\n"
@@ -159,7 +165,7 @@ class Cloner
 
   def add_remote
     logger.info "Adding remote for #{originating_repo} on #{originating_hostname}..."
-    git.add_remote(remote_name, originating_repo_with_token)
+    git.add_remote(remote_name, originating_url_with_token)
   end
 
   def fetch
@@ -168,23 +174,17 @@ class Cloner
   end
 
   def merge
-    public_note = public? ? '(is public)' : ''
-
     logger.info "Checking out #{branch_name}"
     git.branch(branch_name).checkout
 
-    logger.info "Merging #{originating_repo}/master into #{branch_name} #{public_note}..."
-    if public?
-      output = run_command('git', 'merge', "#{remote_name}/master")
-    else
+    logger.info "Merging #{originating_repo}/master into #{branch_name}..."
+    if squash?
+      logger.info "Squashing!"
       output = run_command('git', 'merge', '--squash', "#{remote_name}/master")
       git.commit(commit_message)
-    end
-  rescue Git::GitExecuteError => e
-    if e.message =~ /nothing to commit/
-      return nil, "#{e.message}"
     else
-      raise
+      logger.info "Not squashing"
+      output = run_command('git', 'merge', "#{remote_name}/master")
     end
   end
 
