@@ -3,7 +3,7 @@ require "open3"
 class Cloner
 
   DEFAULTS = {
-    :tmpdir               => Dir.mktmpdir,
+    :tmpdir               => nil,
     :after_sha            => nil,
     :squash               => nil,
     :destination_hostname => "github.com",
@@ -19,7 +19,11 @@ class Cloner
   alias_method :squash?, :squash
 
   def initialize(options)
+    logger.level = Logger::WARN if ENV["RACK_ENV"] == "test"
+    logger.info "New Cloner instance initialized"
+
     DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
+    @tmpdir ||= Dir.mktmpdir("repository-sync")
 
     if destination_hostname != 'github.com'
       Octokit.configure do |c|
@@ -28,18 +32,13 @@ class Cloner
       end
     end
 
-    git.config('user.name', ENV['MACHINE_USER_NAME'])
-    git.config('user.email', ENV['MACHINE_USER_EMAIL'])
-
-    logger.level = Logger::WARN if ENV["RACK_ENV"] == "test"
-
-    logger.info "New Cloner instance initialized"
     DEFAULTS.each { |key,value| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
 
   def clone
-    Dir.chdir "#{tmpdir}/#{destination_repo}" do
-      Bundler.with_clean_env do
+    Bundler.with_clean_env do
+      git_init
+      Dir.chdir "#{tmpdir}/#{destination_repo}" do
         add_remote
         fetch
         merge
@@ -170,6 +169,11 @@ class Cloner
   end
 
   # Methods that perform sync actions, in order
+
+  def git_init
+    git.config('user.name',  ENV['MACHINE_USER_NAME'])
+    git.config('user.email', ENV['MACHINE_USER_EMAIL'])
+  end
 
   def add_remote
     logger.info "Adding remote for #{originating_repo} on #{originating_hostname}..."
