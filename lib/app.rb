@@ -47,12 +47,7 @@ class RepositorySync < Sinatra::Base
   end
 
   get '/' do
-    'I think you misunderstand how to use this.'
-  end
-
-  post '/update_public' do
-    do_the_work
-    'Processing...'
+    'You\'ll want to make a POST to /sync. Check the documentation for more info.'
   end
 
   post '/update_private' do
