@@ -57,11 +57,11 @@ class Cloner
   end
 
   def safe_destination_repo
-    @safe_destination_repo ||= destination_repo.tr('/-', '_')
+    @safe_destination_repo ||= destination_repo.tr('/-', '_').upcase
   end
 
   def commit_message
-    @commit_message ||= ENV["#{safe_destination_repo.upcase}_COMMIT_MESSAGE"] || 'Sync changes from upstream repository'
+    @commit_message ||= ENV["#{safe_destination_repo}_COMMIT_MESSAGE"] || 'Sync changes from upstream repository'
   end
 
   def files
@@ -73,11 +73,15 @@ class Cloner
   end
 
   def pull_request_title
-    ENV["#{safe_destination_repo.upcase}_PR_TITLE"] || 'Sync changes from upstream repository'
+    if files.count == 1
+      "#{files.first["status"].capitalize} #{files.first["filename"]}"
+    else
+      ENV["#{safe_destination_repo}_PR_TITLE"] || 'Sync changes from upstream repository'
+    end
   end
 
   def pull_request_body
-    return ENV["#{safe_destination_repo.upcase}_PR_BODY"] if ENV["#{safe_destination_repo.upcase}_PR_BODY"]
+    return ENV["#{safe_destination_repo}_PR_BODY"] if ENV["#{safe_destination_repo}_PR_BODY"]
     body = ""
     ["added", "removed", "unchanged"].each do |type|
       filenames = files.select { |f| f['status'] == type }.map { |f| f['filename'] }
