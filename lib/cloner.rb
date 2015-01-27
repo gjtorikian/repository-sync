@@ -1,4 +1,4 @@
-require "open3"
+require 'open3'
 
 class Cloner
   GITHUB_DOMAIN = GITHUB_DOMAIN
@@ -12,7 +12,7 @@ class Cloner
     :originating_hostname => GITHUB_DOMAIN,
     :originating_repo     => nil,
     :squash               => true,
-    :git                  => nil,
+    :git                  => nil
   }
 
   attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
@@ -20,8 +20,8 @@ class Cloner
   alias_method :squash?, :squash
 
   def initialize(options)
-    logger.level = Logger::WARN if ENV["RACK_ENV"] == "test"
-    logger.info "New Cloner instance initialized"
+    logger.level = Logger::WARN if ENV['RACK_ENV'] == 'test'
+    logger.info 'New Cloner instance initialized'
 
     DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
     @tmpdir ||= Dir.mktmpdir("repository-sync")
@@ -35,7 +35,7 @@ class Cloner
 
     git_init
 
-    DEFAULTS.each { |key,value| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
+    DEFAULTS.each { |key, _| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
 
   def clone
@@ -47,7 +47,7 @@ class Cloner
         push
         create_pull_request
         delete_branch
-        logger.info "fin"
+        logger.info 'fin'
       end
     end
   rescue StandardError => e
@@ -94,7 +94,7 @@ class Cloner
     @files ||= client.compare(destination_repo, 'master', branch_name)['files']
   end
 
-  def url_with_token(remote=:destination)
+  def url_with_token(remote = :destination)
     token    = (remote == :destination) ? destination_token    : originating_token
     hostname = (remote == :destination) ? destination_hostname : originating_hostname
     repo     = (remote == :destination) ? destination_repo     : originating_repo
@@ -111,7 +111,7 @@ class Cloner
 
   def pull_request_title
     if files.count == 1
-      "#{files.first["status"].capitalize} #{files.first["filename"]}"
+      "#{files.first['status'].capitalize} #{files.first['filename']}"
     else
       ENV["#{safe_destination_repo}_PR_TITLE"] || 'Sync changes from upstream repository'
     end
@@ -119,8 +119,8 @@ class Cloner
 
   def pull_request_body
     return ENV["#{safe_destination_repo}_PR_BODY"] if ENV["#{safe_destination_repo}_PR_BODY"]
-    body = ""
-    ["added", "removed", "unchanged"].each do |type|
+    body = ''
+    %w(added removed unchanged).each do |type|
       filenames = files.select { |f| f['status'] == type }.map { |f| f['filename'] }
       body << "### #{type.capitalize} files: \n\n* #{filenames.join("\n* ")}\n\n" unless filenames.empty?
     end
@@ -145,15 +145,15 @@ class Cloner
   end
 
   def run_command(*args)
-    logger.info "Running command #{args.join(" ")}"
+    logger.info "Running command #{args.join(' ')}"
     output = status = nil
     output, status = Open3.capture2e(*args)
-    output = output.gsub(/#{dotcom_token}/, "<TOKEN>") if dotcom_token
-    output = output.gsub(/#{ghe_token}/, "<TOKEN>") if ghe_token
+    output = output.gsub(/#{dotcom_token}/, '<TOKEN>') if dotcom_token
+    output = output.gsub(/#{ghe_token}/, '<TOKEN>') if ghe_token
     logger.info "Result: #{output}"
     if status != 0
       report_error(output)
-      raise "Command `#{args.join(" ")}` failed: #{output}"
+      fail "Command `#{args.join(' ')}` failed: #{output}"
     end
     output
   end
@@ -167,7 +167,7 @@ class Cloner
     body << "\n```\n"
     body << "You'll have to resolve this problem manually, I'm afraid.\n"
     body << "![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)"
-    client.create_issue originating_repo, "Merge conflict detected", body
+    client.create_issue originating_repo, 'Merge conflict detected', body
   end
 
   # Methods that perform sync actions, in order
@@ -193,22 +193,22 @@ class Cloner
 
     logger.info "Merging #{originating_repo}/master into #{branch_name}..."
     if squash?
-      logger.info "Squashing!"
-      output = run_command('git', 'merge', '--squash', "#{remote_name}/master")
+      logger.info 'Squashing!'
+      run_command('git', 'merge', '--squash', "#{remote_name}/master")
       git.commit(commit_message)
     else
-      logger.info "Not squashing"
-      output = run_command('git', 'merge', "#{remote_name}/master")
+      logger.info 'Not squashing!'
+      run_command('git', 'merge', "#{remote_name}/master")
     end
   end
 
   def push
-    logger.info "Pushing to origin..."
+    logger.info 'Pushing to origin...'
     run_command('git', 'push', 'origin', branch_name)
   end
 
   def create_pull_request
-    return logger.warn "No files have changed" if files.empty?
+    return logger.warn 'No files have changed' if files.empty?
 
     pr = client.create_pull_request(
       destination_repo,
