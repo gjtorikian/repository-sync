@@ -21,7 +21,11 @@ class RepositorySync < Sinatra::Base
     configure_redis
   end
 
-  before do
+  get '/' do
+    'You\'ll want to make a POST to /sync. Check the documentation for more info.'
+  end
+
+  post '/sync' do
     # trim trailing slashes
     request.path_info.sub!(/\/$/, '')
 
@@ -45,13 +49,7 @@ class RepositorySync < Sinatra::Base
     # keep some important vars
     process_payload(@payload)
     @destination_hostname = params[:destination_hostname] || 'github.com'
-  end
-
-  get '/' do
-    'You\'ll want to make a POST to /sync. Check the documentation for more info.'
-  end
-
-  post '/sync' do
+    
     Resque.enqueue(CloneJob, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, @squash)
   end
 
