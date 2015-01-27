@@ -1,7 +1,7 @@
 require 'open3'
 
 class Cloner
-  GITHUB_DOMAIN = GITHUB_DOMAIN
+  GITHUB_DOMAIN = 'github.com'
 
   DEFAULTS = {
     :tmpdir               => nil,
