@@ -3,27 +3,63 @@ require 'spec_helper'
 describe 'Cloner' do
 
   let(:cloner) { Cloner.new({
-      :dotcom_token     => "dotcom_token",
-      :ghe_token        => "ghe_token",
-      :destination_repo => "gjtorikian/destination_repo",
-      :originating_repo => "gjtorikian/originating_repo",
-      :ghe_server       => "someserver.com",
-      :git              => Git.clone( fixture_path("gjtorikian/destination_repo"), "#{tmpdir}/gjtorikian/destination_repo"),
-      :tmpdir           => tmpdir
+      :destination_repo  => "gjtorikian/destination_repo",
+      :originating_repo  => "gjtorikian/originating_repo",
+      :git               => Git.clone( fixture_path("gjtorikian/destination_repo"), "#{tmpdir}/gjtorikian/destination_repo"),
+      :tmpdir            => tmpdir
   })}
 
   before do
     setup_tmpdir
-    cloner.logger.level = Logger::WARN
   end
 
-  it "sets the token" do
-    expect(cloner.token).to eql("dotcom_token")
+  it "knows the originating token" do
+    with_env "DOTCOM_MACHINE_USER_TOKEN", "dotcom_token" do
+      expect(cloner.originating_token).to eql("dotcom_token")
+    end
   end
 
-  it "knows to use the ghe token" do
-    cloner.destination_hostname = "someserver.com"
-    expect(cloner.token).to eql("ghe_token")
+  it "knows the destination token" do
+    with_env "GHE_MACHINE_USER_TOKEN", "ghe_token" do
+      cloner.destination_hostname = "someserver.com"
+      expect(cloner.destination_token).to eql("ghe_token")
+    end
+  end
+
+  it "knows the dotcom token" do
+    with_env "DOTCOM_MACHINE_USER_TOKEN", "dotcom_token" do
+      expect(cloner.dotcom_token).to eql("dotcom_token")
+    end
+  end
+
+  it "knows the ghe token" do
+    with_env "GHE_MACHINE_USER_TOKEN", "ghe_token" do
+      expect(cloner.ghe_token).to eql("ghe_token")
+    end
+  end
+
+  it "creates the url with token" do
+    with_env "DOTCOM_MACHINE_USER_TOKEN", "dotcom_token" do
+      expected = "https://dotcom_token:x-oauth-basic@github.com/gjtorikian/destination_repo.git"
+      expect(cloner.url_with_token(:destination)).to eql(expected)
+
+      expected = "https://dotcom_token:x-oauth-basic@github.com/gjtorikian/originating_repo.git"
+      expect(cloner.url_with_token(:originating)).to eql(expected)
+    end
+  end
+
+  it "creates the originating url with token" do
+    with_env "DOTCOM_MACHINE_USER_TOKEN", "dotcom_token" do
+      expected = "https://dotcom_token:x-oauth-basic@github.com/gjtorikian/originating_repo.git"
+      expect(cloner.originating_url_with_token).to eql(expected)
+    end
+  end
+
+  it "creates the destitination url with token" do
+    with_env "DOTCOM_MACHINE_USER_TOKEN", "dotcom_token" do
+      expected = "https://dotcom_token:x-oauth-basic@github.com/gjtorikian/destination_repo.git"
+      expect(cloner.destination_url_with_token).to eql(expected)
+    end
   end
 
   it "creates the remote name" do
@@ -53,11 +89,6 @@ describe 'Cloner' do
     stub_request(:get, url).
     to_return(:status => 200, :body => fixture("compare_some_files.json"), :headers => { 'Content-Type' => 'application/json' })
     expect(cloner.files.count).to eql(3)
-  end
-
-  it "generates the clone url with token" do
-    expected = "https://dotcom_token:x-oauth-basic@github.com/gjtorikian/originating_repo.git"
-    expect(cloner.clone_url_with_token).to eql(expected)
   end
 
   it "defaults to the default pull request title" do
@@ -102,9 +133,11 @@ describe 'Cloner' do
   end
 
   it "initializes octokit" do
-    expect(cloner.client.class).to eql(Octokit::Client)
-    expect(cloner.client.api_endpoint).to eql('https://api.github.com/')
-    expect(cloner.client.access_token).to eql("dotcom_token")
+    with_env "DOTCOM_MACHINE_USER_TOKEN", "dotcom_token" do
+      expect(cloner.client.class).to eql(Octokit::Client)
+      expect(cloner.client.api_endpoint).to eql('https://api.github.com/')
+      expect(cloner.client.access_token).to eql("dotcom_token")
+    end
   end
 
   it "clones the repo" do
@@ -139,13 +172,14 @@ describe 'Cloner' do
   end
 
   it "fetches the repo" do
-    cloner.instance_variable_set("@clone_url_with_token", fixture_path("/gjtorikian/originating_repo"))
+    cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
     cloner.add_remote
     cloner.fetch
   end
 
   it "merges the changes" do
-    cloner.instance_variable_set("@clone_url_with_token", fixture_path("/gjtorikian/originating_repo"))
+    cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
+    cloner.squash = false
     cloner.git
     cloner.add_remote
     cloner.fetch
@@ -157,8 +191,8 @@ describe 'Cloner' do
   end
 
   it "squashes the changes when public" do
-    cloner.instance_variable_set("@clone_url_with_token", fixture_path("/gjtorikian/originating_repo"))
-    cloner.public = true
+    cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
+    cloner.squash = true
     cloner.git
     cloner.add_remote
     cloner.fetch
@@ -174,7 +208,7 @@ describe 'Cloner' do
     stub_request(:get, url).
     to_return(:status => 200, :body => fixture("compare_some_files.json"), :headers => { 'Content-Type' => 'application/json' })
 
-    cloner.instance_variable_set("@clone_url_with_token", fixture_path("/gjtorikian/originating_repo"))
+    cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
 
     stub = stub_request(:post, "https://api.github.com/repos/gjtorikian/destination_repo/pulls").
     to_return( :status => 204, :body => fixture("create_pr.json"), :headers => { 'Content-Type' => 'application/json' })
@@ -182,11 +216,14 @@ describe 'Cloner' do
     stub2 = stub_request(:put, "https://api.github.com/repos/gjtorikian/destination_repo/pulls/1347/merge").
     to_return(:status => 200)
 
-    cloner.git
-    cloner.add_remote
-    cloner.fetch
-    cloner.merge
-    cloner.create_pull_request
+    Bundler.with_clean_env do
+      cloner.git
+      cloner.add_remote
+      cloner.fetch
+      cloner.merge
+      cloner.create_pull_request
+    end
+
     expect(stub).to have_been_requested
   end
 
@@ -198,16 +235,18 @@ describe 'Cloner' do
     stub_request(:post, "https://api.github.com/repos/gjtorikian/destination_repo/pulls").
     to_return( :status => 204, :body => fixture("create_pr.json"), :headers => { 'Content-Type' => 'application/json' })
 
-    cloner.instance_variable_set("@clone_url_with_token", fixture_path("/gjtorikian/originating_repo"))
-
+    cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
+    
     stub = stub_request(:put, "https://api.github.com/repos/gjtorikian/destination_repo/pulls/1347/merge").
     to_return(:status => 200)
 
-    cloner.git
-    cloner.add_remote
-    cloner.fetch
-    cloner.merge
-    cloner.create_pull_request
+    Bundler.with_clean_env do
+      cloner.git
+      cloner.add_remote
+      cloner.fetch
+      cloner.merge
+      cloner.create_pull_request
+    end
     expect(stub).to have_been_requested
   end
 

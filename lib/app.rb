@@ -21,10 +21,13 @@ class RepositorySync < Sinatra::Base
     configure_redis
   end
 
-  before do
+  get '/' do
+    'You\'ll want to make a POST to /sync. Check the documentation for more info.'
+  end
+
+  post '/sync' do
     # trim trailing slashes
     request.path_info.sub!(/\/$/, '')
-    pass unless %w(update_public update_private).include? request.path_info.split('/')[1]
 
     # ensure there's a payload
     request.body.rewind
@@ -41,23 +44,13 @@ class RepositorySync < Sinatra::Base
     @payload = JSON.parse(payload_body)
     halt 202, "Payload was not for master, was for #{@payload['ref']}, aborting." unless master_branch?(@payload)
 
+    @squash = params[:squash]
+
     # keep some important vars
     process_payload(@payload)
     @destination_hostname = params[:destination_hostname] || 'github.com'
-  end
 
-  get '/' do
-    'I think you misunderstand how to use this.'
-  end
-
-  post '/update_public' do
-    do_the_work(true)
-    'Processing...'
-  end
-
-  post '/update_private' do
-    do_the_work(false)
-    'Processing...'
+    Resque.enqueue(CloneJob, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, @squash)
   end
 
   helpers Helpers

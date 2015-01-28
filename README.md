@@ -20,16 +20,14 @@ Next, you'll need to set a few environment variables:
 | `MACHINE_USER_EMAIL` | **Required**. The Git email address of your machine user.
 | `MACHINE_USER_NAME` | **Required**. The Git author name of your machine user.
 
+On your private repository, set a webhook to point to the `/sync?squash` endpoint.
+Pass in one more parameter, `dest_repo`, the name of the public repository to update. It might look like `http://repository-sync.someserver.com/sync?squash&dest_repo=ourorg/public`. Don't forget to fill out the **Secret** field with your secret token!
 
-On your private repository, set a webhook to point to the `/update_public` endpoint.
-Pass in just one parameter, `dest_repo`, the name of the public repository to update. It might look like `http://repository-sync.someserver.com?dest_repo=ourorg/public`. Don't forget to fill out the **Secret** field with your secret token!
+On your public repository, set a webhook to point to the `/sync` endpoint.
+Pass in just one parameter, `dest_repo`, the name of the private repository to update. It might look like `http://repository-sync.someserver.com/sync?dest_repo=ourorg/private`. Don't forget to fill out the **Secret** field with your secret token!
 
-On your public repository, set a webhook to point to the `/update_private` endpoint.
-Pass in just one parameter, `dest_repo`, the name of the private repository to update. It might look like `http://repository-sync.someserver.com?dest_repo=ourorg/private`. Don't forget to fill out the **Secret** field with your secret token!
-
-You'll notice these two are practically the same. They are! The only difference is
-that, whilst updating a public repository, this tool will `--squash merge` to hide
-the commit history.
+You'll notice these two endpoints are practically the same. They are! The only difference is
+that, when hitting an endpoint with the `squash` path parameter, this tool will perform a `--squash merge` to hide the commit history.
 
 ### Between a GitHub.com repository and a GitHub Enterprise repository
 
@@ -45,20 +43,19 @@ Next, you'll need to set a few environment variables:
 | `MACHINE_USER_EMAIL` | **Required**. The Git email address of your machine user.
 | `MACHINE_USER_NAME` | **Required**. The Git author name of your machine user.
 
-On your private repository, set a webhook to point to the `/update_public` endpoint.
-Pass in just one parameter, `dest_repo`, the name of the public repository to update. It might look like `http://repository-sync.someserver.com?dest_repo=ourorg/public`. Don't forget to fill out the **Secret** field with your secret token!
+On your private repository, set a webhook to point to the `/sync` endpoint.
+Pass in just one parameter, `dest_repo`, the name of the public repository to update. It might look like `http://repository-sync.someserver.com/sync?squash&dest_repo=ourorg/public`. Don't forget to fill out the **Secret** field with your secret token!
 
-On your public repository, set a webhook to point to the `/update_private` endpoint.
+On your public repository, set a webhook to point to the `/sync` endpoint.
 Pass in two parameters:
 
 * `dest_repo`, the name of the private repository to update
 * `hostname`, the hostname of your GitHub Enterprise installation
 
-It might look like `http://repository-sync.someserver.com?dest_repo=ourorg/private&hostname=our.ghe.io`. Don't forget to fill out the **Secret** field with your secret token!
+It might look like `http://repository-sync.someserver.com/sync?dest_repo=ourorg/private&hostname=our.ghe.io`. Don't forget to fill out the **Secret** field with your secret token!
 
-You'll notice these two are practically the same. They are! The only difference is
-that, whilst updating a public repository, this tool will `--squash merge` to hide
-the commit history.
+You'll notice these two endpoints are practically the same. They are! The only difference is
+that, when hitting an endpoint with the `squash` path parameter, this tool will perform a `--squash merge` to hide the commit history.
 
 ## Customizing messaging
 
