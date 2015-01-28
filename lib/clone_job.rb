@@ -9,7 +9,6 @@ class CloneJob
 
     cloner = Cloner.new({
       :after_sha            => after_sha,
-      :squash               => squash,
       :destination_hostname => destination_hostname,
       :destination_repo     => destination_repo,
       :originating_hostname => originating_hostname,
