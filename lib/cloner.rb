@@ -11,7 +11,6 @@ class Cloner
     :destination_repo     => nil,
     :originating_hostname => GITHUB_DOMAIN,
     :originating_repo     => nil,
-    :squash               => true,
     :git                  => nil
   }
 
