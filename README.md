@@ -50,7 +50,7 @@ On your public repository, set a webhook to point to the `/sync` endpoint.
 Pass in two parameters:
 
 * `dest_repo`, the name of the private repository to update
-* `hostname`, the hostname of your GitHub Enterprise installation
+* `destination_hostname`, the hostname of your GitHub Enterprise installation
 
 It might look like `http://repository-sync.someserver.com/sync?dest_repo=ourorg/private&hostname=our.ghe.io`. Don't forget to fill out the **Secret** field with your secret token!
 
