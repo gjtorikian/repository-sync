@@ -6,8 +6,7 @@ class Cloner
   DEFAULTS = {
     :tmpdir               => nil,
     :after_sha            => nil,
-    :squash               => nil,
-    :sync_method          => :merge,
+    :sync_method          => "merge",
     :destination_hostname => GITHUB_DOMAIN,
     :destination_repo     => nil,
     :originating_hostname => GITHUB_DOMAIN,
@@ -16,8 +15,7 @@ class Cloner
   }
 
   attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
-  attr_accessor :originating_hostname, :originating_repo, :squash
-  alias_method :squash?, :squash
+  attr_accessor :originating_hostname, :originating_repo, :sync_method
 
   def initialize(options)
     logger.level = Logger::WARN if ENV['RACK_ENV'] == 'test'
