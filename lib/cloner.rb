@@ -7,6 +7,7 @@ class Cloner
     :tmpdir               => nil,
     :after_sha            => nil,
     :squash               => nil,
+    :sync_method          => :merge,
     :destination_hostname => GITHUB_DOMAIN,
     :destination_repo     => nil,
     :originating_hostname => GITHUB_DOMAIN,
