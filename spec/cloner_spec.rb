@@ -203,6 +203,19 @@ describe 'Cloner' do
     expect(cloner.git.log.count).to eql(commits + 1) # Ensure the squash
   end
 
+  it "replaces repository contents without actually merging" do
+    cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
+    cloner.sync_method = "replace_contents"
+    cloner.git
+    cloner.add_remote
+    cloner.fetch
+    commits = cloner.git.log.count
+    output = cloner.apply_sync_method
+    expect(output).to match(/1 file changed, 1 insertion/)
+    expect(output).to match(/create mode 100644 file2.md/)
+    # expect(somehow to test this as distinct from a squash)
+  end
+
   it "creates a pull request" do
     url = "https://api.github.com/repos/gjtorikian/destination_repo/compare/master...#{cloner.branch_name}"
     stub_request(:get, url).
@@ -236,7 +249,7 @@ describe 'Cloner' do
     to_return( :status => 204, :body => fixture("create_pr.json"), :headers => { 'Content-Type' => 'application/json' })
 
     cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
-    
+
     stub = stub_request(:put, "https://api.github.com/repos/gjtorikian/destination_repo/pulls/1347/merge").
     to_return(:status => 200)
 
