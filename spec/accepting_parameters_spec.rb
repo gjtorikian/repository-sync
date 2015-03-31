@@ -14,14 +14,14 @@ describe 'endpoints' do
     it 'does nothing without a body' do
       expect(app).to_not receive(:process_payload)
       post '/sync'
-      expect(last_response.status).to eql(500)
+      expect(last_response.status).to eql(400)
       expect(last_response.body).to eql('Missing body payload!')
     end
 
     it 'does nothing without the right params' do
       expect(app).to_not receive(:process_payload)
       post '/sync', incoming
-      expect(last_response.status).to eql(500)
+      expect(last_response.status).to eql(400)
       expect(last_response.body).to eql('Missing `dest_repo` argument')
     end
 
