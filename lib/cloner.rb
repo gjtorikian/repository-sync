@@ -41,7 +41,8 @@ class Cloner
       Dir.chdir "#{tmpdir}/#{destination_repo}" do
         add_remote
         fetch
-        merge
+        checkout
+        apply_sync_method
         push
         create_pull_request
         delete_branch
@@ -185,19 +186,41 @@ class Cloner
     git.remote(remote_name).fetch
   end
 
-  def merge
+  def checkout
     logger.info "Checking out #{branch_name}"
     git.branch(branch_name).checkout
+  end
 
-    logger.info "Merging #{originating_repo}/master into #{branch_name}..."
-    if squash?
-      logger.info 'Squashing!'
-      run_command('git', 'merge', '--squash', "#{remote_name}/master")
-      git.commit(commit_message)
+  def apply_sync_method
+    if sync_method == "squash"
+      squash
+    elsif sync_method == "replace_contents"
+      replace_contents
+    elsif sync_method == "merge"
+      merge
     else
-      logger.info 'Not squashing!'
-      run_command('git', 'merge', "#{remote_name}/master")
+      logger.warn "Invalid sync method #{sync_method}. Merging by default..."
+      merge
     end
+  end
+
+  def merge
+    logger.info "Merging #{originating_repo}/master into #{branch_name}..."
+    run_command('git', 'merge', "#{remote_name}/master")
+  end
+
+  def squash
+    logger.info "Squashing #{originating_repo}/master into #{branch_name}..."
+    run_command('git', 'merge', '--squash', "#{remote_name}/master")
+    git.commit(commit_message)
+  end
+
+  def replace_contents
+    logger.info "Committing contents of #{originating_repo}/master into #{branch_name} directly..."
+    run_command('git', 'rm', '-r', '*')
+    run_command('git', 'checkout', "#{originating_repo}/master", '--', "'*'")
+    run_command('git', 'add', '-A', '.')
+    git.commit(commit_message)
   end
 
   def push

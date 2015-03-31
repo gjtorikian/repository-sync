@@ -179,12 +179,12 @@ describe 'Cloner' do
 
   it "merges the changes" do
     cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
-    cloner.squash = false
+    cloner.sync_method = "merge"
     cloner.git
     cloner.add_remote
     cloner.fetch
     commits = cloner.git.log.count
-    output = cloner.merge
+    output = cloner.apply_sync_method
     expect(output).to match(/1 file changed, 1 insertion/)
     expect(output).to match(/create mode 100644 file2.md/)
     expect(cloner.git.log.count).to eql(commits + 2)
@@ -192,12 +192,12 @@ describe 'Cloner' do
 
   it "squashes the changes when public" do
     cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
-    cloner.squash = true
+    cloner.sync_method = "squash"
     cloner.git
     cloner.add_remote
     cloner.fetch
     commits = cloner.git.log.count
-    output = cloner.merge
+    output = cloner.apply_sync_method
     expect(output).to match(/1 file changed, 1 insertion/)
     expect(output).to match(/create mode 100644 file2.md/)
     expect(cloner.git.log.count).to eql(commits + 1) # Ensure the squash
@@ -220,7 +220,7 @@ describe 'Cloner' do
       cloner.git
       cloner.add_remote
       cloner.fetch
-      cloner.merge
+      cloner.apply_sync_method
       cloner.create_pull_request
     end
 
@@ -244,7 +244,7 @@ describe 'Cloner' do
       cloner.git
       cloner.add_remote
       cloner.fetch
-      cloner.merge
+      cloner.apply_sync_method
       cloner.create_pull_request
     end
     expect(stub).to have_been_requested
