@@ -47,7 +47,6 @@ class RepositorySync < Sinatra::Base
     halt 202, "Payload was not for master, was for #{@payload['ref']}, aborting." unless master_branch?(@payload)
 
     @sync_method = params[:sync_method] || "merge"
-    @sync_method = "squash" if params[:squash]
     halt 400, "sync_method #{@sync_method} not supported" unless SUPPORTED_SYNC_METHODS.include?(@sync_method)
 
     # keep some important vars
