@@ -217,10 +217,8 @@ class Cloner
 
   def replace_contents
     logger.info "Committing contents of #{originating_repo}/master into #{branch_name} directly..."
-    run_command('git', 'rm', '-r', '*')
-    run_command('git', 'checkout', "#{remote_name}/master", '--', "*")
-    run_command('git', 'add', '-A', '.')
-    git.commit(commit_message)
+    commit_id = run_command('git', 'commit-tree', "#{remote_name}/master^{tree}", '-p', 'HEAD', '-m', commit_message)
+    run_command('git', 'update-ref', 'HEAD', commit_id.chomp)
   end
 
   def push

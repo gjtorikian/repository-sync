@@ -211,9 +211,7 @@ describe 'Cloner' do
     cloner.fetch
     commits = cloner.git.log.count
     output = cloner.apply_sync_method
-    expect(output).to match(/1 file changed, 1 insertion/)
-    expect(output).to match(/create mode 100644 file2.md/)
-    # expect(somehow to test this as distinct from a squash)
+    expect(output).to eql("")
   end
 
   it "creates a pull request" do
