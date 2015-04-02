@@ -46,6 +46,11 @@ class RepositorySync < Sinatra::Base
     @payload = JSON.parse(payload_body)
     halt 202, "Payload was not for master, was for #{@payload['ref']}, aborting." unless master_branch?(@payload)
 
+    # Support ?squash parameter for backwards compatibility.
+    if params[:squash] && params[:sync_method].nil?
+      params[:sync_method] = "squash"
+    end
+
     @sync_method = params[:sync_method] || "merge"
     halt 400, "sync_method #{@sync_method} not supported" unless SUPPORTED_SYNC_METHODS.include?(@sync_method)
 
