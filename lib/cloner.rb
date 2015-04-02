@@ -215,6 +215,9 @@ class Cloner
     git.commit(commit_message)
   end
 
+  # Using HEAD here is likely the best thing since HEAD will be a pointer to
+  # the head of the branch we checked out earlier and is likely more reliable
+  # than manually trying to use "refs/heads/#{branch_name}"
   def replace_contents
     logger.info "Committing contents of #{originating_repo}/master into #{branch_name} directly..."
     commit_id = run_command('git', 'commit-tree', "#{remote_name}/master^{tree}", '-p', 'HEAD', '-m', commit_message)
