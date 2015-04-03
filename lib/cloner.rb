@@ -6,7 +6,7 @@ class Cloner
   DEFAULTS = {
     :tmpdir               => nil,
     :after_sha            => nil,
-    :squash               => nil,
+    :sync_method          => "merge",
     :destination_hostname => GITHUB_DOMAIN,
     :destination_repo     => nil,
     :originating_hostname => GITHUB_DOMAIN,
@@ -15,8 +15,7 @@ class Cloner
   }
 
   attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
-  attr_accessor :originating_hostname, :originating_repo, :squash
-  alias_method :squash?, :squash
+  attr_accessor :originating_hostname, :originating_repo, :sync_method
 
   def initialize(options)
     logger.level = Logger::WARN if ENV['RACK_ENV'] == 'test'
@@ -42,7 +41,8 @@ class Cloner
       Dir.chdir "#{tmpdir}/#{destination_repo}" do
         add_remote
         fetch
-        merge
+        checkout
+        apply_sync_method
         push
         create_pull_request
         delete_branch
@@ -186,19 +186,42 @@ class Cloner
     git.remote(remote_name).fetch
   end
 
-  def merge
+  def checkout
     logger.info "Checking out #{branch_name}"
     git.branch(branch_name).checkout
+  end
 
-    logger.info "Merging #{originating_repo}/master into #{branch_name}..."
-    if squash?
-      logger.info 'Squashing!'
-      run_command('git', 'merge', '--squash', "#{remote_name}/master")
-      git.commit(commit_message)
+  def apply_sync_method
+    if sync_method == "squash"
+      squash
+    elsif sync_method == "replace_contents"
+      replace_contents
+    elsif sync_method == "merge"
+      merge
     else
-      logger.info 'Not squashing!'
-      run_command('git', 'merge', "#{remote_name}/master")
+      logger.warn "Invalid sync method #{sync_method}. Merging by default..."
+      merge
     end
+  end
+
+  def merge
+    logger.info "Merging #{originating_repo}/master into #{branch_name}..."
+    run_command('git', 'merge', "#{remote_name}/master")
+  end
+
+  def squash
+    logger.info "Squashing #{originating_repo}/master into #{branch_name}..."
+    run_command('git', 'merge', '--squash', "#{remote_name}/master")
+    git.commit(commit_message)
+  end
+
+  # Using HEAD here is likely the best thing since HEAD will be a pointer to
+  # the head of the branch we checked out earlier and is likely more reliable
+  # than manually trying to use "refs/heads/#{branch_name}"
+  def replace_contents
+    logger.info "Committing contents of #{originating_repo}/master into #{branch_name} directly..."
+    commit_id = run_command('git', 'commit-tree', "#{remote_name}/master^{tree}", '-p', 'HEAD', '-m', commit_message)
+    run_command('git', 'update-ref', 'HEAD', commit_id.chomp)
   end
 
   def push

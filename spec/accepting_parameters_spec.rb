@@ -25,6 +25,13 @@ describe 'endpoints' do
       expect(last_response.body).to eql('Missing `dest_repo` argument')
     end
 
+    it 'does nothing without the right params' do
+      expect(app).to_not receive(:process_payload)
+      post '/sync?sync_method=forge_from_cosmic_oneness&dest_repo=gjtorikian/fake', incoming
+      expect(last_response.status).to eql(400)
+      expect(last_response.body).to eql('sync_method forge_from_cosmic_oneness not supported')
+    end
+
     it 'does nothing if payload is not for master' do
       expect(app).to_not receive(:process_payload)
       post '/sync?dest_repo=gjtorikian/fake', non_master_payload
