@@ -53,7 +53,7 @@ Pass in two parameters:
 * `dest_repo`, the name of the private repository to update
 * `destination_hostname`, the hostname of your GitHub Enterprise installation
 
-It might look like `http://repository-sync.someserver.com/sync?dest_repo=ourorg/private&hostname=our.ghe.io`. Don't forget to fill out the **Secret** field with your secret token!
+It might look like `http://repository-sync.someserver.com/sync?dest_repo=ourorg/private&destination_hostname=our.ghe.io`. Don't forget to fill out the **Secret** field with your secret token!
 
 You'll notice these two endpoints are practically the same. They are! The only difference is
 that, when hitting an endpoint with the `squash` path parameter, this tool will perform a `--squash merge` to hide the commit history.
