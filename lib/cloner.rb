@@ -5,6 +5,7 @@ class Cloner
 
   DEFAULTS = {
     :tmpdir               => nil,
+    :committers            => nil,
     :after_sha            => nil,
     :sync_method          => "merge",
     :destination_hostname => GITHUB_DOMAIN,
@@ -14,7 +15,7 @@ class Cloner
     :git                  => nil
   }
 
-  attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
+  attr_accessor :tmpdir, :committers, :after_sha, :destination_hostname, :destination_repo
   attr_accessor :originating_hostname, :originating_repo, :sync_method
 
   def initialize(options)
