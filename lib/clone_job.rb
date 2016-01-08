@@ -8,7 +8,7 @@ class CloneJob
   def self.perform(committers, after_sha, destination_hostname, destination_repo, originating_hostname, originating_repo, sync_method)
 
     cloner = Cloner.new({
-      :committers            => committers,
+      :committers           => committers,
       :after_sha            => after_sha,
       :destination_hostname => destination_hostname,
       :destination_repo     => destination_repo,
