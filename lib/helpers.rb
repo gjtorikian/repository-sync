@@ -16,7 +16,7 @@ module Helpers
     users = commits.map do |commit|
       username = commit['author']['username'] || commit['committer']['username']
     end
-    @committers = users.uniq!.map { |user| "@#{user}" }
+    @committers = users.uniq.map { |user| "@#{user}" }
   end
 
   def master_branch?(payload)
