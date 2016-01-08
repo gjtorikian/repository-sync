@@ -5,6 +5,7 @@ class Cloner
 
   DEFAULTS = {
     :tmpdir               => nil,
+    :committers            => nil,
     :after_sha            => nil,
     :sync_method          => "merge",
     :destination_hostname => GITHUB_DOMAIN,
@@ -14,7 +15,7 @@ class Cloner
     :git                  => nil
   }
 
-  attr_accessor :tmpdir, :after_sha, :destination_hostname, :destination_repo
+  attr_accessor :tmpdir, :committers, :after_sha, :destination_hostname, :destination_repo
   attr_accessor :originating_hostname, :originating_repo, :sync_method
 
   def initialize(options)
@@ -166,6 +167,7 @@ class Cloner
     body << "\n```\n"
     body << "You'll have to resolve this problem manually, I'm afraid.\n"
     body << "![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)"
+    body << "\n\n /cc #{committers.join(' ')}" unless committers.nil?
     client.create_issue originating_repo, 'Merge conflict detected', body
   end
 
