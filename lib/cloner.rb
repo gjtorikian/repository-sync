@@ -167,6 +167,7 @@ class Cloner
     body << "\n```\n"
     body << "You'll have to resolve this problem manually, I'm afraid.\n"
     body << "![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)"
+    body << "\n\n /cc #{committers.join(' ')}" unless committers.nil?
     client.create_issue originating_repo, 'Merge conflict detected', body
   end
 
