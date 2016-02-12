@@ -58,7 +58,9 @@ class RepositorySync < Sinatra::Base
     process_payload(@payload)
     @destination_hostname = params[:destination_hostname] || 'github.com'
 
-    Resque.enqueue(CloneJob, @committers, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, @sync_method)
+    @default_branch = params[:default_branch]
+
+    Resque.enqueue(CloneJob, @committers, @after_sha, @destination_hostname, @destination_repo, @originating_hostname, @originating_repo, @default_branch, @sync_method)
   end
 
   helpers Helpers
