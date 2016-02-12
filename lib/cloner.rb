@@ -240,8 +240,6 @@ class Cloner
   end
 
   def submit_to_default_branch
-    return logger.warn 'No files have changed' if files.empty?
-
     run_command('git', 'push', 'origin', 'master')
   end
 
