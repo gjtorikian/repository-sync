@@ -221,11 +221,12 @@ describe 'Cloner' do
 
     cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
     cloner.instance_variable_set("@default_branch", "1")
+    cloner.git
     cloner.add_remote
     cloner.fetch
     cloner.apply_sync_method
     output = cloner.submit_to_default_branch
-    expect(output).to eql("")
+    expect(output).to match(/master -> master/)
   end
 
   it "creates a pull request" do
