@@ -5,8 +5,9 @@ class Cloner
 
   DEFAULTS = {
     :tmpdir               => nil,
-    :committers            => nil,
+    :committers           => nil,
     :after_sha            => nil,
+    :default_branch       => nil,
     :sync_method          => "merge",
     :destination_hostname => GITHUB_DOMAIN,
     :destination_repo     => nil,
@@ -16,7 +17,7 @@ class Cloner
   }
 
   attr_accessor :tmpdir, :committers, :after_sha, :destination_hostname, :destination_repo
-  attr_accessor :originating_hostname, :originating_repo, :sync_method
+  attr_accessor :originating_hostname, :originating_repo, :default_branch, :sync_method
 
   def initialize(options)
     logger.level = Logger::WARN if ENV['RACK_ENV'] == 'test'
@@ -42,10 +43,17 @@ class Cloner
       Dir.chdir "#{tmpdir}/#{destination_repo}" do
         add_remote
         fetch
-        checkout
-        apply_sync_method
-        push
-        create_pull_request
+
+        if @default_branch.nil?
+          checkout
+          apply_sync_method
+          push
+          create_pull_request
+        else
+          apply_sync_method
+          submit_to_default_branch
+        end
+
         delete_branch
         logger.info 'fin'
       end
@@ -229,6 +237,12 @@ class Cloner
   def push
     logger.info 'Pushing to origin...'
     run_command('git', 'push', 'origin', branch_name)
+  end
+
+  def submit_to_default_branch
+    return logger.warn 'No files have changed' if files.empty?
+
+    run_command('git', 'push', 'origin', 'master')
   end
 
   def create_pull_request

@@ -214,6 +214,15 @@ describe 'Cloner' do
     expect(output).to eql("")
   end
 
+  it "pushes directly to default branch" do
+    cloner.instance_variable_set("@default_branch", "1")
+    cloner.add_remote
+    cloner.fetch
+    cloner.apply_sync_method
+    output = cloner.submit_to_default_branch
+    expect(output).to eql("")
+  end
+
   it "creates a pull request" do
     url = "https://api.github.com/repos/gjtorikian/destination_repo/compare/master...#{cloner.branch_name}"
     stub_request(:get, url).
