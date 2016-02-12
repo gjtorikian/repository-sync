@@ -214,7 +214,7 @@ describe 'Cloner' do
     expect(output).to eql("")
   end
 
-  it "pushes directly to default branch" do
+  skip "pushes directly to default branch" do
     url = "https://api.github.com/repos/gjtorikian/destination_repo/compare/master...#{cloner.branch_name}"
     stub_request(:get, url).
     to_return(:status => 200, :body => fixture("compare_some_files.json"), :headers => { 'Content-Type' => 'application/json' })
