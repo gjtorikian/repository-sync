@@ -215,6 +215,11 @@ describe 'Cloner' do
   end
 
   it "pushes directly to default branch" do
+    url = "https://api.github.com/repos/gjtorikian/destination_repo/compare/master...#{cloner.branch_name}"
+    stub_request(:get, url).
+    to_return(:status => 200, :body => fixture("compare_some_files.json"), :headers => { 'Content-Type' => 'application/json' })
+
+    cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
     cloner.instance_variable_set("@default_branch", "1")
     cloner.add_remote
     cloner.fetch
