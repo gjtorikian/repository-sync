@@ -1,14 +1,14 @@
 require 'open3'
 
 class Cloner
-  GITHUB_DOMAIN = 'github.com'
+  GITHUB_DOMAIN = 'github.com'.freeze
 
   DEFAULTS = {
     :tmpdir               => nil,
     :committers           => nil,
     :after_sha            => nil,
     :default_branch       => nil,
-    :sync_method          => "merge",
+    :sync_method          => 'merge',
     :destination_hostname => GITHUB_DOMAIN,
     :destination_repo     => nil,
     :originating_hostname => GITHUB_DOMAIN,
@@ -24,9 +24,9 @@ class Cloner
     logger.info 'New Cloner instance initialized'
 
     DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
-    @tmpdir ||= Dir.mktmpdir("repository-sync")
+    @tmpdir ||= Dir.mktmpdir('repository-sync')
 
-    if destination_hostname != GITHUB_DOMAIN
+    unless github_dotcom_dest?
       Octokit.configure do |c|
         c.api_endpoint = "https://#{destination_hostname}/api/v3/"
         c.web_endpoint = "https://#{destination_hostname}"
@@ -67,11 +67,11 @@ class Cloner
   end
 
   def originating_token
-    @originating_token ||= (originating_hostname == GITHUB_DOMAIN ? dotcom_token : ghe_token)
+    @originating_token ||= (github_dotcom_origin? ? dotcom_token : ghe_token)
   end
 
   def destination_token
-    @destination_token ||= (destination_hostname == GITHUB_DOMAIN ? dotcom_token : ghe_token)
+    @destination_token ||= (github_dotcom_dest? ? dotcom_token : ghe_token)
   end
 
   def dotcom_token
@@ -264,5 +264,13 @@ class Cloner
   def delete_branch
     logger.info "Deleting #{destination_repo}/#{branch_name}"
     client.delete_branch(destination_repo, branch_name)
+  end
+
+  def github_dotcom_dest?
+    destination_hostname == GITHUB_DOMAIN
+  end
+
+  def github_dotcom_origin?
+    originating_hostname == GITHUB_DOMAIN
   end
 end
