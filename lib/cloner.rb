@@ -14,7 +14,7 @@ class Cloner
     :originating_hostname => GITHUB_DOMAIN,
     :originating_repo     => nil,
     :git                  => nil
-  }
+  }.freeze
 
   attr_accessor :tmpdir, :committers, :after_sha, :destination_hostname, :destination_repo
   attr_accessor :originating_hostname, :originating_repo, :default_branch, :sync_method
@@ -23,7 +23,7 @@ class Cloner
     logger.level = Logger::WARN if ENV['RACK_ENV'] == 'test'
     logger.info 'New Cloner instance initialized'
 
-    DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
+    DEFAULTS.each { |key, value| instance_variable_set("@#{key}", options[key] || value) }
     @tmpdir ||= Dir.mktmpdir('repository-sync')
 
     unless github_dotcom_dest?
@@ -35,7 +35,7 @@ class Cloner
 
     git_init
 
-    DEFAULTS.each { |key, _| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
+    DEFAULTS.keys { |key| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
 
   def clone
@@ -44,7 +44,7 @@ class Cloner
         add_remote
         fetch
 
-        if @default_branch.nil?
+        if default_branch.nil?
           checkout
           apply_sync_method
           push
@@ -130,7 +130,8 @@ class Cloner
     body = ''
     %w(added removed unchanged).each do |type|
       filenames = files.select { |f| f['status'] == type }.map { |f| f['filename'] }
-      body << "### #{type.capitalize} files: \n\n* #{filenames.join("\n* ")}\n\n" unless filenames.empty?
+      next if filenames.empty?
+      body << "### #{type.capitalize} files: \n\n* #{filenames.join("\n* ")}\n\n"
     end
     body
   end
@@ -154,14 +155,13 @@ class Cloner
 
   def run_command(*args)
     logger.info "Running command #{args.join(' ')}"
-    output = status = nil
     output, status = Open3.capture2e(*args)
-    output = output.gsub(/#{dotcom_token}/, '<TOKEN>') if dotcom_token
-    output = output.gsub(/#{ghe_token}/, '<TOKEN>') if ghe_token
+    output = output.gsub(/#{dotcom_token}/, '<DOTCOM_TOKEN>') if dotcom_token
+    output = output.gsub(/#{ghe_token}/, '<GHE_TOKEN>') if ghe_token
     logger.info "Result: #{output}"
     if status != 0
       report_error(output)
-      fail "Command `#{args.join(' ')}` failed: #{output}"
+      raise "Command `#{args.join(' ')}` failed: #{output}"
     end
     output
   end
@@ -203,11 +203,11 @@ class Cloner
   end
 
   def apply_sync_method
-    if sync_method == "squash"
+    if sync_method == 'squash'
       squash
-    elsif sync_method == "replace_contents"
+    elsif sync_method == 'replace_contents'
       replace_contents
-    elsif sync_method == "merge"
+    elsif sync_method == 'merge'
       merge
     else
       logger.warn "Invalid sync method #{sync_method}. Merging by default..."
@@ -241,7 +241,7 @@ class Cloner
   end
 
   def submit_to_default_branch
-    run_command('git', 'push', 'origin', 'master')
+    run_command('git', 'push', 'origin', default_branch)
   end
 
   def create_pull_request
