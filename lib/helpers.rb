@@ -14,7 +14,7 @@ module Helpers
     @after_sha = payload['after']
     commits = payload['commits']
     users = commits.map do |commit|
-      username = commit['author']['username'] || commit['committer']['username']
+      commit['author']['username'] || commit['committer']['username']
     end
     @committers = users.uniq.map { |user| "@#{user}" }
   end

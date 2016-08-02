@@ -21,7 +21,7 @@ class RepositorySync < Sinatra::Base
     configure_redis
   end
 
-  SUPPORTED_SYNC_METHODS = ['squash', 'merge', 'replace_contents']
+  SUPPORTED_SYNC_METHODS = %w(squash merge replace_contents).freeze
 
   get '/' do
     'You\'ll want to make a POST to /sync. Check the documentation for more info.'
@@ -29,7 +29,7 @@ class RepositorySync < Sinatra::Base
 
   post '/sync' do
     # trim trailing slashes
-    request.path_info.sub!(/\/$/, '')
+    request.path_info.sub!(%r{/$}, '')
 
     # ensure there's a payload
     request.body.rewind
@@ -48,10 +48,10 @@ class RepositorySync < Sinatra::Base
 
     # Support ?squash parameter for backwards compatibility.
     if params[:squash] && params[:sync_method].nil?
-      params[:sync_method] = "squash"
+      params[:sync_method] = 'squash'
     end
 
-    @sync_method = params[:sync_method] || "merge"
+    @sync_method = params[:sync_method] || 'merge'
     halt 400, "sync_method #{@sync_method} not supported" unless SUPPORTED_SYNC_METHODS.include?(@sync_method)
 
     # keep some important vars

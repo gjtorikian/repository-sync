@@ -1,20 +1,20 @@
 require 'open3'
 
 class Cloner
-  GITHUB_DOMAIN = 'github.com'
+  GITHUB_DOMAIN = 'github.com'.freeze
 
   DEFAULTS = {
     :tmpdir               => nil,
     :committers           => nil,
     :after_sha            => nil,
     :default_branch       => nil,
-    :sync_method          => "merge",
+    :sync_method          => 'merge',
     :destination_hostname => GITHUB_DOMAIN,
     :destination_repo     => nil,
     :originating_hostname => GITHUB_DOMAIN,
     :originating_repo     => nil,
     :git                  => nil
-  }
+  }.freeze
 
   attr_accessor :tmpdir, :committers, :after_sha, :destination_hostname, :destination_repo
   attr_accessor :originating_hostname, :originating_repo, :default_branch, :sync_method
@@ -23,10 +23,10 @@ class Cloner
     logger.level = Logger::WARN if ENV['RACK_ENV'] == 'test'
     logger.info 'New Cloner instance initialized'
 
-    DEFAULTS.each { |key,value| instance_variable_set("@#{key}", options[key] || value) }
-    @tmpdir ||= Dir.mktmpdir("repository-sync")
+    DEFAULTS.each { |key, value| instance_variable_set("@#{key}", options[key] || value) }
+    @tmpdir ||= Dir.mktmpdir('repository-sync')
 
-    if destination_hostname != GITHUB_DOMAIN
+    unless github_dotcom_dest?
       Octokit.configure do |c|
         c.api_endpoint = "https://#{destination_hostname}/api/v3/"
         c.web_endpoint = "https://#{destination_hostname}"
@@ -35,7 +35,7 @@ class Cloner
 
     git_init
 
-    DEFAULTS.each { |key, _| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
+    DEFAULTS.keys { |key| logger.info "  * #{key}: #{instance_variable_get("@#{key}")}" }
   end
 
   def clone
@@ -44,7 +44,7 @@ class Cloner
         add_remote
         fetch
 
-        if @default_branch.nil?
+        if default_branch.nil?
           checkout
           apply_sync_method
           push
@@ -67,11 +67,11 @@ class Cloner
   end
 
   def originating_token
-    @originating_token ||= (originating_hostname == GITHUB_DOMAIN ? dotcom_token : ghe_token)
+    @originating_token ||= (github_dotcom_origin? ? dotcom_token : ghe_token)
   end
 
   def destination_token
-    @destination_token ||= (destination_hostname == GITHUB_DOMAIN ? dotcom_token : ghe_token)
+    @destination_token ||= (github_dotcom_dest? ? dotcom_token : ghe_token)
   end
 
   def dotcom_token
@@ -130,7 +130,8 @@ class Cloner
     body = ''
     %w(added removed unchanged).each do |type|
       filenames = files.select { |f| f['status'] == type }.map { |f| f['filename'] }
-      body << "### #{type.capitalize} files: \n\n* #{filenames.join("\n* ")}\n\n" unless filenames.empty?
+      next if filenames.empty?
+      body << "### #{type.capitalize} files: \n\n* #{filenames.join("\n* ")}\n\n"
     end
     body
   end
@@ -154,14 +155,16 @@ class Cloner
 
   def run_command(*args)
     logger.info "Running command #{args.join(' ')}"
-    output = status = nil
     output, status = Open3.capture2e(*args)
-    output = output.gsub(/#{dotcom_token}/, '<TOKEN>') if dotcom_token
-    output = output.gsub(/#{ghe_token}/, '<TOKEN>') if ghe_token
+    output = output.gsub(/#{dotcom_token}/, '<DOTCOM_TOKEN>') if dotcom_token
+    output = output.gsub(/#{ghe_token}/, '<GHE_TOKEN>') if ghe_token
     logger.info "Result: #{output}"
     if status != 0
       report_error(output)
-      fail "Command `#{args.join(' ')}` failed: #{output}"
+      error = "Command `#{args.join(' ')}` failed"
+      error = error.gsub(/#{dotcom_token}/, '<DOTCOM_TOKEN>') if dotcom_token
+      error = error.gsub(/#{ghe_token}/, '<GHE_TOKEN>') if ghe_token
+      raise "#{error}: #{output}"
     end
     output
   end
@@ -198,15 +201,15 @@ class Cloner
 
   def checkout
     logger.info "Checking out #{branch_name}"
-    git.branch(branch_name).checkout
+    run_command('git', 'checkout', '-b', branch_name)
   end
 
   def apply_sync_method
-    if sync_method == "squash"
+    if sync_method == 'squash'
       squash
-    elsif sync_method == "replace_contents"
+    elsif sync_method == 'replace_contents'
       replace_contents
-    elsif sync_method == "merge"
+    elsif sync_method == 'merge'
       merge
     else
       logger.warn "Invalid sync method #{sync_method}. Merging by default..."
@@ -240,7 +243,7 @@ class Cloner
   end
 
   def submit_to_default_branch
-    run_command('git', 'push', 'origin', 'master')
+    run_command('git', 'push', 'origin', default_branch)
   end
 
   def create_pull_request
@@ -264,5 +267,13 @@ class Cloner
   def delete_branch
     logger.info "Deleting #{destination_repo}/#{branch_name}"
     client.delete_branch(destination_repo, branch_name)
+  end
+
+  def github_dotcom_dest?
+    destination_hostname == GITHUB_DOMAIN
+  end
+
+  def github_dotcom_origin?
+    originating_hostname == GITHUB_DOMAIN
   end
 end

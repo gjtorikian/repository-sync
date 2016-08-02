@@ -1,13 +1,10 @@
-
-ENV['RACK_ENV'] = 'test'
-
 require 'bundler/setup'
 require 'rack/test'
 require 'rspec'
 require 'webmock/rspec'
 require_relative '../lib/app'
 require 'resque_spec'
-require "fileutils"
+require 'fileutils'
 
 WebMock.disable_net_connect!
 
@@ -56,7 +53,7 @@ def octokit_version
 end
 
 def tmpdir
-  File.expand_path "../tmp", File.dirname(__FILE__)
+  File.expand_path '../tmp', File.dirname(__FILE__)
 end
 
 def setup_tmpdir
