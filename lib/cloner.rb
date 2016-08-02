@@ -161,7 +161,10 @@ class Cloner
     logger.info "Result: #{output}"
     if status != 0
       report_error(output)
-      raise "Command `#{args.join(' ')}` failed: #{output}"
+      error = "Command `#{args.join(' ')}` failed"
+      error = error.gsub(/#{dotcom_token}/, '<DOTCOM_TOKEN>') if dotcom_token
+      error = error.gsub(/#{ghe_token}/, '<GHE_TOKEN>') if ghe_token
+      raise "#{error}: #{output}"
     end
     output
   end
