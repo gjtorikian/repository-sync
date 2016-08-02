@@ -198,7 +198,8 @@ class Cloner
 
   def checkout
     logger.info "Checking out #{branch_name}"
-    git.branch(branch_name).checkout
+    git.branch(branch_name).create
+    git.checkout(branch_name)
   end
 
   def apply_sync_method
