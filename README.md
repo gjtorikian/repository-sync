@@ -117,9 +117,6 @@ http://repository-sync.someserver.com/sync?dest_repo=ourorg/private&destination_
 
 Don't forget to fill out the **Secret** field with your secret token!
 
-You'll notice these two endpoints are practically the same. They are! The only difference is
-that, when hitting an endpoint with the `squash` path parameter, this tool will perform a `--squash merge` to hide the commit history.
-
 ## Customizing messaging
 
 Believe it or not, there are a few more environment variables you can set! These determine the text used by repository-sync when creating commit messages and pull requests. They are also dependent on the name of the destination repository. All of these values are optional.
