@@ -1,7 +1,7 @@
 repository-sync
 ===============
 
-Easily sync between two repositories, one private, one public.
+repository-sync is a tool designed to keep two repositories—one private, one public—entirely in sync. Private commits are [*squashed*](http://jamescooke.info/git-to-squash-or-not-to-squash.html) into a single commit to avoid leaking information. Similarly, every public commit is brought over to the private repository, so that none of the history is lost.
 
 [![Build Status](https://travis-ci.org/gjtorikian/repository-sync.svg?branch=master)](https://travis-ci.org/gjtorikian/repository-sync)
 
