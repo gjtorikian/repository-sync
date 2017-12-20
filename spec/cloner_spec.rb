@@ -151,7 +151,7 @@ describe 'Cloner' do
 
   it "reports errors" do
     stub = stub_request(:post, "https://api.github.com/repos/gjtorikian/originating_repo/issues").
-    with(:body => "{\"labels\":[],\"title\":\"Merge conflict detected\",\"body\":\"Hey, I'm really sorry about this, but there was a merge conflict when I tried to auto-sync the last time, from :\\n\\n```\\nfoo\\nMerge error\\nbar\\n```\\nYou'll have to resolve this problem manually, I'm afraid.\\n![I'm so sorry](http://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)\"}").
+    with(:body => "{\"labels\":[],\"title\":\"Merge conflict detected\",\"body\":\"Hey, I'm really sorry about this, but there was a merge conflict when I tried to auto-sync the last time, from :\\n\\n```\\nfoo\\nMerge error\\nbar\\n```\\nYou'll have to resolve this problem manually, I'm afraid.\\n![I'm so sorry](https://media.giphy.com/media/NxKcqJI6MdIgo/giphy.gif)\"}").
     to_return(:status => 204)
 
     output = "foo\nMerge error\nbar"
