@@ -67,11 +67,15 @@ class Cloner
   end
 
   def originating_token
-    @originating_token ||= (github_dotcom_origin? ? dotcom_token : ghe_token)
+    ghe_token_env_var ||= "#{originating_hostname}_MACHINE_USER_TOKEN".upcase
+    ghe_token_found = ENV["#{ghe_token_env_var}"] || ghe_token
+    @originating_token ||= (github_dotcom_dest? ? dotcom_token : ghe_token_found)
   end
 
   def destination_token
-    @destination_token ||= (github_dotcom_dest? ? dotcom_token : ghe_token)
+    ghe_token_env_var ||= "#{destination_hostname}_MACHINE_USER_TOKEN".upcase
+    ghe_token_found = ENV["#{ghe_token_env_var}"] || ghe_token
+    @destination_token ||= (github_dotcom_dest? ? dotcom_token : ghe_token_found)
   end
 
   def dotcom_token
