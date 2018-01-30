@@ -117,6 +117,19 @@ http://repository-sync.someserver.com/sync?dest_repo=ourorg/private&destination_
 
 Don't forget to fill out the **Secret** field with your secret token!
 
+### Between a GitHub Enterprise repository and a GitHub Enterprise repository on different instances
+
+To synchronize GitHub Enterprise repositories across different GitHub Enterprise instances,
+follow the [previous guide](#between-a-github-enterprise-repository-and-a-github-enterprise-repository)
+but configure the machine token like this:
+
+| Option | Description
+| :----- | :----------
+| `GHE1HOSTNAME_MACHINE_USER_TOKEN` | **Required**.  This is [the access token the server will act as](https://help.github.com/articles/creating-an-access-token-for-command-line-use) when syncing between the repositories, generated on the first GitHub Enterprise instance. In the variable name, replace `GHE1HOSTNAME` by the hostname of the **first** Github Enterprise instance (eg `GITHUB1.MYCOMPANY.COM`).
+| `GHE2HOSTNAME_MACHINE_USER_TOKEN`  | **Required**. A second access token, generated on the second GitHub Enterprise instance. In the variable name, replace `GHE2HOSTNAME` by the hostname of the **second** Github Enterprise instance (eg `GITHUB2.MYCOMPANY.COM`).
+
+In that case, `GHE_MACHINE_USER_TOKEN` variable is not used.
+
 ## Customizing messaging
 
 Believe it or not, there are a few more environment variables you can set! These determine the text used by repository-sync when creating commit messages and pull requests. They are also dependent on the name of the destination repository. All of these values are optional.
