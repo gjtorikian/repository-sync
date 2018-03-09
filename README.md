@@ -16,12 +16,12 @@ docker-compose build
 docker-compose up
 ```
 
-docker-compose expects a `.env` file with environment variables properly configured as below.
+docker-compose expects a `.env` with environment variables properly configured. See the environment variables available defined below. For example:
 
 Example:
 ```
-GITHUB.ACME.COM_MACHINE_USER_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-GITHUB2.ACME.COM_MACHINE_USER_TOKEN=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+GITHUB.COM_MACHINE_USER_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+GITHUB.ACME.COM_MACHINE_USER_TOKEN=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 LANG=en_US.UTF-8
 MACHINE_USER_EMAIL=my.email@acme.com
 MACHINE_USER_NAME="GitHub Sync"
