@@ -7,9 +7,31 @@ repository-sync is a tool designed to keep two repositories—one private, one p
 
 ## Setup
 
-### Between two GitHub.com repositories
+### Deploy
 
-First, deploy this code to Heroku (or some other server you own).
+First, deploy this code to a hosting environment such as Heroku.
+
+Alternatively, you can use `docker-compose` (the app will listen on port `4567`):
+
+```bash
+docker-compose build
+docker-compose up
+```
+
+docker-compose expects a `.env` with environment variables properly configured. See the environment variables available defined below. For example:
+
+```
+GITHUB.COM_MACHINE_USER_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+GITHUB.ACME.COM_MACHINE_USER_TOKEN=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+LANG=en_US.UTF-8
+MACHINE_USER_EMAIL=my.email@acme.com
+MACHINE_USER_NAME="GitHub Sync"
+RACK_ENV=production
+REDISTOGO_URL=redis://redis:6379/
+SECRET_TOKEN=cccccccccccccccccccccccccccccccccccccccc
+```
+
+### Between two GitHub.com repositories
 
 Next, you'll need to set a few environment variables:
 

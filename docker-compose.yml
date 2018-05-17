@@ -1,0 +1,24 @@
+web:
+  build: .
+  command: bundle exec unicorn -p 4567 -c ./unicorn.rb
+  env_file:
+     - .env
+  ports:
+    - "4567:4567"
+  links:
+    - redis
+
+worker:
+  build: .
+  command: env TERM_CHILD=1 QUEUES=* bundle exec rake jobs:work
+  env_file:
+     - .env
+  links:
+     - redis
+
+redis:
+  image: redis
+  hostname: redis
+  ports:
+    - "6379:6379"
+  restart: always
