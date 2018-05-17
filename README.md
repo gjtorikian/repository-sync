@@ -9,7 +9,9 @@ repository-sync is a tool designed to keep two repositories—one private, one p
 
 ### Deploy
 
-First, deploy this code to Heroku. Alternatively, use `docker-compose` (the app will listen on port `4567`):
+First, deploy this code to a hosting environment such as Heroku.
+
+Alternatively, you can use `docker-compose` (the app will listen on port `4567`):
 
 ```bash
 docker-compose build
@@ -18,7 +20,6 @@ docker-compose up
 
 docker-compose expects a `.env` with environment variables properly configured. See the environment variables available defined below. For example:
 
-Example:
 ```
 GITHUB.COM_MACHINE_USER_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 GITHUB.ACME.COM_MACHINE_USER_TOKEN=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
