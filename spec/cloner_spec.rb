@@ -180,38 +180,44 @@ describe 'Cloner' do
   it "merges the changes" do
     cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
     cloner.sync_method = "merge"
-    cloner.git
-    cloner.add_remote
-    cloner.fetch
-    commits = cloner.git.log.count
-    output = cloner.apply_sync_method
-    expect(output).to match(/1 file changed, 1 insertion/)
-    expect(output).to match(/create mode 100644 file2.md/)
-    expect(cloner.git.log.count).to eql(commits + 2)
+    Dir.chdir "#{tmpdir}/gjtorikian/destination_repo" do
+      cloner.git
+      cloner.add_remote
+      cloner.fetch
+      commits = cloner.git.log.count
+      output = cloner.apply_sync_method
+      expect(output).to match(/1 file changed, 1 insertion/)
+      expect(output).to match(/create mode 100644 file2.md/)
+      expect(cloner.git.log.count).to eql(commits + 2)
+    end
   end
 
   it "squashes the changes when public" do
     cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
     cloner.sync_method = "squash"
-    cloner.git
-    cloner.add_remote
-    cloner.fetch
-    commits = cloner.git.log.count
-    output = cloner.apply_sync_method
-    expect(output).to match(/1 file changed, 1 insertion/)
-    expect(output).to match(/create mode 100644 file2.md/)
-    expect(cloner.git.log.count).to eql(commits + 1) # Ensure the squash
+    Dir.chdir "#{tmpdir}/gjtorikian/destination_repo" do
+      cloner.git
+      cloner.add_remote
+      cloner.fetch
+      commits = cloner.git.log.count
+      output = cloner.apply_sync_method
+      expect(output).to match(/1 file changed, 1 insertion/)
+      expect(output).to match(/create mode 100644 file2.md/)
+      expect(cloner.git.log.count).to eql(commits + 1) # Ensure the squash
+    end
   end
 
   it "replaces repository contents without actually merging" do
     cloner.instance_variable_set("@originating_url_with_token", fixture_path("/gjtorikian/originating_repo"))
     cloner.sync_method = "replace_contents"
-    cloner.git
-    cloner.add_remote
-    cloner.fetch
-    commits = cloner.git.log.count
-    output = cloner.apply_sync_method
-    expect(output).to eql("")
+    Dir.chdir "#{tmpdir}/gjtorikian/destination_repo" do
+      cloner.git
+      cloner.add_remote
+      cloner.fetch
+      commits = cloner.git.log.count
+      output = cloner.apply_sync_method
+      expect(output).to eql("")
+    end
   end
 
   skip "pushes directly to default branch" do
@@ -243,11 +249,13 @@ describe 'Cloner' do
     to_return(:status => 200)
 
     Bundler.with_clean_env do
-      cloner.git
-      cloner.add_remote
-      cloner.fetch
-      cloner.apply_sync_method
-      cloner.create_pull_request
+      Dir.chdir "#{tmpdir}/gjtorikian/destination_repo" do
+        cloner.git
+        cloner.add_remote
+        cloner.fetch
+        cloner.apply_sync_method
+        cloner.create_pull_request
+      end
     end
 
     expect(stub).to have_been_requested
@@ -267,11 +275,13 @@ describe 'Cloner' do
     to_return(:status => 200)
 
     Bundler.with_clean_env do
-      cloner.git
-      cloner.add_remote
-      cloner.fetch
-      cloner.apply_sync_method
-      cloner.create_pull_request
+      Dir.chdir "#{tmpdir}/gjtorikian/destination_repo" do
+        cloner.git
+        cloner.add_remote
+        cloner.fetch
+        cloner.apply_sync_method
+        cloner.create_pull_request
+      end
     end
     expect(stub).to have_been_requested
   end
